@@ -108,7 +108,8 @@ export default function SplitterPage() {
         }))
       );
       showToast("success", "Deteksi otomatis selesai! Silakan periksa rentang halaman.");
-    } catch {
+    } catch (e) {
+      console.error("[AutoDetect] Error:", e);
       showToast("error", "Gagal mendeteksi bab secara otomatis.");
     } finally {
       setDetecting(false);

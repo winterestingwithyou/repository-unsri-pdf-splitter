@@ -115,7 +115,7 @@ export async function splitPdf(
   pdfBytes: ArrayBuffer,
   range: PageRange
 ): Promise<Uint8Array> {
-  const srcDoc = await PDFDocument.load(pdfBytes);
+  const srcDoc = await PDFDocument.load(pdfBytes.slice(0));
   const newDoc = await PDFDocument.create();
 
   const totalPages = srcDoc.getPageCount();
@@ -140,7 +140,7 @@ export async function mergePdfs(pdfBytesArray: ArrayBuffer[]): Promise<Uint8Arra
   const mergedDoc = await PDFDocument.create();
 
   for (const bytes of pdfBytesArray) {
-    const srcDoc = await PDFDocument.load(bytes);
+    const srcDoc = await PDFDocument.load(bytes.slice(0));
     const pageIndices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
     const copiedPages = await mergedDoc.copyPages(srcDoc, pageIndices);
     copiedPages.forEach((page) => mergedDoc.addPage(page));
@@ -150,7 +150,7 @@ export async function mergePdfs(pdfBytesArray: ArrayBuffer[]): Promise<Uint8Arra
 }
 
 export function getPdfPageCount(pdfBytes: ArrayBuffer): Promise<number> {
-  return PDFDocument.load(pdfBytes).then((doc) => doc.getPageCount());
+  return PDFDocument.load(pdfBytes.slice(0)).then((doc) => doc.getPageCount());
 }
 
 // PDF.js based text extraction for chapter detection
@@ -158,15 +158,16 @@ export async function extractPageTexts(
   pdfBytes: ArrayBuffer,
   progressCallback?: (page: number, total: number) => void
 ): Promise<string[]> {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
-  ).toString();
+  const { getPdfjsLib } = await import("./pdfjsSetup");
+  const pdfjsLib = await getPdfjsLib();
 
-  const typedArray = new Uint8Array(pdfBytes);
-  const loadingTask = pdfjsLib.getDocument({ data: typedArray });
-  const pdf = await loadingTask.promise;
+  // Wajib copy buffer — PDF.js men-transfer (detach) ArrayBuffer ke worker
+  // thread saat getDocument() dipanggil. Tanpa copy, buffer asli di React
+  // state akan ter-detach dan tidak bisa digunakan oleh fungsi lain.
+  const buffer = pdfBytes.slice(0);
+  const typedArray = new Uint8Array(buffer);
+
+  const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
 
   const texts: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {

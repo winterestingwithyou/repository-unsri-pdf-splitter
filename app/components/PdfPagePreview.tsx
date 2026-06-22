@@ -31,13 +31,13 @@ export function PdfPagePreview({
 
     (async () => {
       try {
-        const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url
-        ).toString();
+        const { getPdfjsLib } = await import("../utils/pdfjsSetup");
+        const pdfjsLib = await getPdfjsLib();
 
-        const typedArray = new Uint8Array(pdfBytes);
+        // Wajib copy buffer — PDF.js men-transfer (detach) ArrayBuffer ke
+        // worker thread. Tanpa copy, pdfBytes asli di state akan ter-detach.
+        const copy = pdfBytes.slice(0);
+        const typedArray = new Uint8Array(copy);
         const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
         if (cancelled) return;
         pdfDocRef.current = pdf;
