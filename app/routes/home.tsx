@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
 import SplitterPage from "../components/SplitterPage";
 import TurnitinMerger from "../components/TurnitinMerger";
@@ -22,6 +22,11 @@ type Tab = "splitter" | "turnitin";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("splitter");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="animated-bg min-h-screen">
@@ -128,7 +133,18 @@ export default function Home() {
           aria-labelledby="tab-splitter"
           hidden={tab !== "splitter"}
         >
-          {tab === "splitter" && <SplitterPage />}
+          {!mounted ? (
+            <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
+              <div className="space-y-4">
+                <div className="h-6 w-3/4 rounded bg-white/5" />
+                <div className="h-4 w-1/2 rounded bg-white/5" />
+                <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
+              </div>
+              <div className="h-10 w-full rounded bg-white/5" />
+            </div>
+          ) : (
+            tab === "splitter" && <SplitterPage />
+          )}
         </div>
         <div
           id="panel-turnitin"
@@ -136,7 +152,18 @@ export default function Home() {
           aria-labelledby="tab-turnitin"
           hidden={tab !== "turnitin"}
         >
-          {tab === "turnitin" && <TurnitinMerger />}
+          {!mounted ? (
+            <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
+              <div className="space-y-4">
+                <div className="h-6 w-3/4 rounded bg-white/5" />
+                <div className="h-4 w-1/2 rounded bg-white/5" />
+                <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
+              </div>
+              <div className="h-10 w-full rounded bg-white/5" />
+            </div>
+          ) : (
+            tab === "turnitin" && <TurnitinMerger />
+          )}
         </div>
 
         {/* Info cards */}
