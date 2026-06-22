@@ -1,6 +1,7 @@
 import { useState } from "react";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
+const { saveAs } = FileSaver;
 import { mergePdfs, buildTurnitinFilename } from "../utils/pdfProcessor";
 import { FileDropZone } from "../components/FileDropZone";
 import { StudyProgramSelect } from "../components/StudyProgramSelect";
@@ -41,7 +42,7 @@ export default function TurnitinMerger() {
       const merged = await mergePdfs([letterBytes, turnitinBytes]);
       const filename = buildTurnitinFilename({ kode, nim });
 
-      const blob = new Blob([merged], { type: "application/pdf" });
+      const blob = new Blob([merged as any], { type: "application/pdf" });
       saveAs(blob, filename);
       showToast("success", `Berhasil diunduh: ${filename}`);
     } catch (e) {

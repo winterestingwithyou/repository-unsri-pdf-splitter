@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
+const { saveAs } = FileSaver;
 import {
   getDefaultSections,
   splitPdf,
