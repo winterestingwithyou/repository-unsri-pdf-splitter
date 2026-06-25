@@ -230,6 +230,7 @@ export default function SplitterPage() {
 
     setGenerating(true);
     setGenerateProgress(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     try {
       const zip = new JSZip();
@@ -685,30 +686,30 @@ export default function SplitterPage() {
           {generating && (
             <div 
               className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
-              style={{ background: "oklch(8% 0.015 250 / 0.85)" }}
+              style={{ background: "oklch(8% 0.005 245 / 0.82)" }}
             >
               <div 
                 className="w-full max-w-md p-8 rounded-2xl text-center flex flex-col items-center gap-6 animate-fade-in"
                 style={{ 
-                  background: "oklch(14% 0.015 250)", 
-                  border: "1px solid oklch(24% 0.03 250 / 0.6)",
-                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+                  background: "oklch(12% 0.008 245)", 
+                  border: "1px solid oklch(20% 0.015 245)",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)"
                 }}
               >
                 {/* Spinning/pulsing logo / loading graphic */}
                 <div className="relative w-20 h-20 flex items-center justify-center">
                   {/* Outer pulsing ring */}
                   <div 
-                    className="absolute inset-0 rounded-full animate-ping opacity-25"
-                    style={{ border: "2px solid oklch(64% 0.22 165)" }}
+                    className="absolute inset-0 rounded-full animate-ping opacity-20"
+                    style={{ border: "2px solid oklch(55% 0.16 245)" }}
                   />
                   {/* Rotating gradient ring */}
                   <div 
                     className="absolute inset-0 rounded-full animate-spin"
                     style={{ 
                       border: "3px solid transparent",
-                      borderTopColor: "oklch(64% 0.22 165)",
-                      borderRightColor: "oklch(80% 0.12 85)",
+                      borderTopColor: "oklch(55% 0.16 245)",
+                      borderRightColor: "oklch(72% 0.16 85)",
                       borderRadius: "50%"
                     }}
                   />
@@ -723,14 +724,14 @@ export default function SplitterPage() {
                 {/* Title & Status */}
                 <div>
                   <h3 className="text-lg font-bold text-white mb-2">Memproses PDF Skripsi</h3>
-                  <p className="text-sm font-medium" style={{ color: "oklch(64% 0.22 165)" }}>
+                  <p className="text-sm font-medium" style={{ color: "oklch(72% 0.16 85)" }}>
                     {generateStatus}
                   </p>
                 </div>
 
                 {/* Progress Bar */}
                 <div className="w-full">
-                  <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(60% 0.03 250)" }}>
+                  <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(60% 0.03 245)" }}>
                     <span>Kemajuan</span>
                     <span>{generateProgress}%</span>
                   </div>
@@ -739,7 +740,7 @@ export default function SplitterPage() {
                       className="progress-fill transition-all duration-300" 
                       style={{ 
                         width: `${generateProgress}%`,
-                        background: "linear-gradient(90deg, oklch(64% 0.22 165), oklch(80% 0.12 85))"
+                        background: "linear-gradient(90deg, oklch(55% 0.16 245), oklch(72% 0.16 85))"
                       }} 
                     />
                   </div>
@@ -749,9 +750,9 @@ export default function SplitterPage() {
                 <div 
                   className="w-full flex gap-3 p-3.5 rounded-xl text-left"
                   style={{ 
-                    background: "oklch(60% 0.18 35 / 0.08)", 
-                    border: "1px solid oklch(60% 0.18 35 / 0.15)",
-                    color: "oklch(78% 0.14 45)"
+                    background: "oklch(78% 0.18 80 / 0.06)", 
+                    border: "1px solid oklch(78% 0.18 80 / 0.12)",
+                    color: "oklch(85% 0.14 80)"
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: "2px" }}>
