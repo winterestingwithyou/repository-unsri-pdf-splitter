@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import JSZip from "jszip";
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
@@ -29,6 +29,11 @@ type Step = "upload" | "metadata" | "ranges" | "generate";
 export default function SplitterPage() {
   // Step
   const [step, setStep] = useState<Step>("upload");
+
+  // Reset scroll to top when changing steps
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
 
   // File
   const [file, setFile] = useState<File | null>(null);
@@ -80,12 +85,27 @@ export default function SplitterPage() {
   function validateMeta(): boolean {
     const errors: typeof metaErrors = {};
     if (!meta.kode.trim()) errors.kode = "Program studi wajib dipilih";
-    if (!meta.nim.trim()) errors.nim = "NIM wajib diisi";
-    else if (!/^\d+$/.test(meta.nim.trim())) errors.nim = "NIM hanya boleh angka";
-    if (!meta.nidn1.trim()) errors.nidn1 = "NIDN Pembimbing 1 wajib diisi";
-    else if (!/^\d+$/.test(meta.nidn1.trim())) errors.nidn1 = "NIDN hanya boleh angka";
-    if (meta.nidn2 && meta.nidn2.trim() && !/^\d+$/.test(meta.nidn2.trim())) {
-      errors.nidn2 = "NIDN hanya boleh angka";
+    
+    if (!meta.nim.trim()) {
+      errors.nim = "NIM wajib diisi";
+    } else if (!/^\d+$/.test(meta.nim.trim())) {
+      errors.nim = "NIM hanya boleh angka";
+    }
+    
+    if (!meta.nidn1.trim()) {
+      errors.nidn1 = "NIDN Pembimbing 1 wajib diisi";
+    } else if (!/^\d+$/.test(meta.nidn1.trim())) {
+      errors.nidn1 = "NIDN hanya boleh angka";
+    } else if (meta.nidn1.trim().length !== 10) {
+      errors.nidn1 = "NIDN harus tepat 10 digit";
+    }
+    
+    if (meta.nidn2 && meta.nidn2.trim()) {
+      if (!/^\d+$/.test(meta.nidn2.trim())) {
+        errors.nidn2 = "NIDN hanya boleh angka";
+      } else if (meta.nidn2.trim().length !== 10) {
+        errors.nidn2 = "NIDN harus tepat 10 digit";
+      }
     }
     setMetaErrors(errors);
     return Object.keys(errors).length === 0;
@@ -453,6 +473,7 @@ export default function SplitterPage() {
               <input
                 id="nidn1"
                 type="text"
+                maxLength={10}
                 className={`input-dark ${metaErrors.nidn1 ? "border-[oklch(55%_0.22_25)]" : ""}`}
                 placeholder="Contoh: 0012345678"
                 value={meta.nidn1}
@@ -475,6 +496,7 @@ export default function SplitterPage() {
               <input
                 id="nidn2"
                 type="text"
+                maxLength={10}
                 className={`input-dark ${metaErrors.nidn2 ? "border-[oklch(55%_0.22_25)]" : ""}`}
                 placeholder="Kosongkan jika tidak ada"
                 value={meta.nidn2 ?? ""}
@@ -495,10 +517,10 @@ export default function SplitterPage() {
             )}
           </div>
 
-          <div className="flex gap-3 mt-6">
-            <button className="btn btn-secondary" onClick={() => setStep("upload")}>← Kembali</button>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
+            <button className="btn btn-secondary w-full sm:w-auto" onClick={() => setStep("upload")}>← Kembali</button>
             <button
-              className="btn btn-primary flex-1"
+              className="btn btn-primary flex-1 w-full"
               onClick={() => { if (validateMeta()) setStep("ranges"); }}
             >
               Lanjut ke Rentang Halaman →
@@ -576,10 +598,10 @@ export default function SplitterPage() {
                 Tambah Bab Baru
               </button>
 
-              <div className="flex gap-3 mt-4">
-                <button className="btn btn-secondary" onClick={() => setStep("metadata")}>← Kembali</button>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 mt-4">
+                <button className="btn btn-secondary w-full sm:w-auto" onClick={() => setStep("metadata")}>← Kembali</button>
                 <button
-                  className="btn btn-primary flex-1"
+                  className="btn btn-primary flex-1 w-full"
                   onClick={() => setStep("generate")}
                   disabled={sections.some((s) => s.required && (!s.range || (s.range2 !== undefined && !s.range2)))}
                 >
@@ -745,13 +767,13 @@ export default function SplitterPage() {
             </div>
           )}
 
-          <div className="flex gap-3">
-            <button className="btn btn-secondary" onClick={() => setStep("ranges")} disabled={generating}>
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            <button className="btn btn-secondary w-full sm:w-auto" onClick={() => setStep("ranges")} disabled={generating}>
               ← Kembali
             </button>
             <button
               id="btn-generate-zip"
-              className="btn btn-primary flex-1"
+              className="btn btn-primary flex-1 w-full"
               onClick={handleGenerate}
               disabled={generating}
             >
