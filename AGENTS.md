@@ -1,12 +1,12 @@
-# Repository UNSRI PDF Splitter
+# Repository UNSRI Guide
 
 ## Project Overview
 
-Repository UNSRI PDF Splitter is a privacy-first client-side web application designed to help Universitas Sriwijaya students prepare PDF files required for Repository UNSRI submission.
+Repository UNSRI Guide is a privacy-first client-side web application designed to help Universitas Sriwijaya students prepare PDF files required for Repository UNSRI submission and guide them through the upload process.
 
 Students are required to upload multiple files to the repository, including a full thesis PDF and separated PDF files for each chapter (BAB). Manually splitting the document, determining page ranges, and renaming every file is time-consuming and error-prone.
 
-This application automates the splitting, merging, and file naming process based on Repository UNSRI standards.
+This application automates the splitting, merging, and file naming process based on Repository UNSRI standards, and serves as a step-by-step preparation guide.
 
 ---
 
@@ -362,14 +362,14 @@ The application will provide an integrated step-by-step guide that helps student
 - **Account Setup Walkthrough**: A visual, step-by-step guide explaining how to register and set up a Repository UNSRI account correctly.
 - **Upload Guide**: A detailed, illustrated tutorial on how to upload the prepared files to the Repository UNSRI system, covering file order, required metadata fields, and common mistakes to avoid.
 
-### UI/UX Redesign
+### UI/UX Redesign (COMPLETED)
 
-The current interface will undergo a full visual redesign to produce a look that feels more **professional and academic**, appropriate for the context of a university thesis submission tool.
+The interface has undergone a full visual and structural redesign to achieve a **professional, academic-grade** aesthetic appropriate for a university thesis submission tool:
 
-The redesign goals:
-- Cleaner, more structured layout with better visual hierarchy.
-- A typography and color palette that reflects an academic and institutional tone.
-- Improved information architecture so users can navigate the tool more intuitively.
+- **Institutional Design Theme**: Implemented a curated dark-academic color palette featuring deep navy-blue primary tones (`oklch(55% 0.16 245)`) and gold accent details (`oklch(72% 0.16 85)`).
+- **Responsive Layout**: Replaced the simple inline tabs with a flexible responsive sidebar navigation system (supporting Splitter, Turnitin Merger, and Guide sections) that adapts to mobile screens.
+- **Micro-Animations & Visual Cues**: Added floating key buttons (e.g. automatic detection with gold/sparkle visual cue) and full-screen glassmorphic loading overlays aligned with the theme.
+- **Transition Smoothness**: Enforced viewport scroll adjustments on step transitions to prevent layout disorientation.
 
 ---
 

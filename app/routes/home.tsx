@@ -6,14 +6,14 @@ import { ToastContainer } from "../components/Toast";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Repository UNSRI — Panduan & Alat Persiapan Upload Repositori" },
+    { title: "Repository UNSRI Guide — Panduan & Alat Persiapan Upload" },
     {
       name: "description",
       content:
         "Panduan lengkap dan alat bantu persiapan file upload Repository Universitas Sriwijaya. Split PDF skripsi, merger Turnitin, dan panduan upload — semua diproses di browser.",
     },
     { name: "keywords", content: "repository unsri, pdf splitter, skripsi, tugas akhir, unsri, panduan upload" },
-    { property: "og:title", content: "Repository UNSRI — Panduan & Alat Upload" },
+    { property: "og:title", content: "Repository UNSRI Guide — Panduan & Alat Upload" },
     { property: "og:description", content: "Panduan & alat persiapan file Repository UNSRI. Privacy-first — diproses langsung di browser." },
   ];
 }
@@ -82,7 +82,7 @@ export default function Home() {
             />
             <div>
               <h1 className="text-sm font-bold leading-tight gradient-text">
-                Repository UNSRI
+                Repository UNSRI Guide
               </h1>
               <p className="text-[11px] hidden sm:block" style={{ color: "oklch(50% 0.02 245)" }}>
                 Panduan & Alat Persiapan Upload
