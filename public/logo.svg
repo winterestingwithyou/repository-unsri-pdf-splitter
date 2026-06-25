@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background glow / gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <!-- Gold / Yellow Gradient representing UNSRI -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <!-- Cyan/Teal Gradient for Modern Split Action -->
+    <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <!-- Subtle drop shadow -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Background circle (rounded icon) -->
+  <rect width="512" height="512" rx="128" fill="url(#bg-grad)" />
+
+  <!-- Outer Ring with UNSRI Gold -->
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="none" stroke="url(#gold-grad)" stroke-width="4" opacity="0.3" />
+
+  <!-- Main Logo Mark -->
+  <g filter="url(#shadow)">
+    <!-- Document Left Half (Blue/Teal) -->
+    <path d="M220 110 H150 C127.909 110 110 127.909 110 150 V362 C110 384.091 127.909 402 150 402 H220 V110 Z" fill="url(#cyan-grad)" />
+    <!-- Document Right Half (Gold/Yellow) -->
+    <path d="M292 110 H362 C384.091 110 402 127.909 402 150 V220 L312 110 Z" fill="url(#gold-grad)" opacity="0.9" />
+    <!-- Document Right Fold/Bottom Half -->
+    <path d="M292 220 H402 V362 C402 384.091 384.091 402 362 402 H292 V220 Z" fill="url(#gold-grad)" />
+    
+    <!-- Split Divider Glow Effect -->
+    <line x1="256" y1="80" x2="256" y2="432" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.9" />
+    
+    <!-- Sparkle / Star (UNSRI Badge style) -->
+    <path d="M256 206 L266 226 L288 229 L272 245 L276 267 L256 256 L236 267 L240 245 L224 229 L246 226 Z" fill="#ffffff" />
+  </g>
+</svg>

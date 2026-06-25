@@ -656,15 +656,91 @@ export default function SplitterPage() {
             </div>
           </div>
 
-          {/* Progress */}
+          {/* Progress Overlay */}
           {generating && (
-            <div className="mb-4">
-              <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(60% 0.03 250)" }}>
-                <span>{generateStatus}</span>
-                <span>{generateProgress}%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${generateProgress}%` }} />
+            <div 
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+              style={{ background: "oklch(8% 0.015 250 / 0.85)" }}
+            >
+              <div 
+                className="w-full max-w-md p-8 rounded-2xl text-center flex flex-col items-center gap-6 animate-fade-in"
+                style={{ 
+                  background: "oklch(14% 0.015 250)", 
+                  border: "1px solid oklch(24% 0.03 250 / 0.6)",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+                }}
+              >
+                {/* Spinning/pulsing logo / loading graphic */}
+                <div className="relative w-20 h-20 flex items-center justify-center">
+                  {/* Outer pulsing ring */}
+                  <div 
+                    className="absolute inset-0 rounded-full animate-ping opacity-25"
+                    style={{ border: "2px solid oklch(64% 0.22 165)" }}
+                  />
+                  {/* Rotating gradient ring */}
+                  <div 
+                    className="absolute inset-0 rounded-full animate-spin"
+                    style={{ 
+                      border: "3px solid transparent",
+                      borderTopColor: "oklch(64% 0.22 165)",
+                      borderRightColor: "oklch(80% 0.12 85)",
+                      borderRadius: "50%"
+                    }}
+                  />
+                  {/* Central Logo */}
+                  <img 
+                    src="/logo.svg" 
+                    alt="Logo" 
+                    className="w-12 h-12 object-contain relative z-10" 
+                  />
+                </div>
+
+                {/* Title & Status */}
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">Memproses PDF Skripsi</h3>
+                  <p className="text-sm font-medium" style={{ color: "oklch(64% 0.22 165)" }}>
+                    {generateStatus}
+                  </p>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full">
+                  <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(60% 0.03 250)" }}>
+                    <span>Kemajuan</span>
+                    <span>{generateProgress}%</span>
+                  </div>
+                  <div className="progress-bar" style={{ height: "8px" }}>
+                    <div 
+                      className="progress-fill transition-all duration-300" 
+                      style={{ 
+                        width: `${generateProgress}%`,
+                        background: "linear-gradient(90deg, oklch(64% 0.22 165), oklch(80% 0.12 85))"
+                      }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Crucial Warning Alert */}
+                <div 
+                  className="w-full flex gap-3 p-3.5 rounded-xl text-left"
+                  style={{ 
+                    background: "oklch(60% 0.18 35 / 0.08)", 
+                    border: "1px solid oklch(60% 0.18 35 / 0.15)",
+                    color: "oklch(78% 0.14 45)"
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: "2px" }}>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-xs text-white">Jangan Tutup Halaman Ini!</p>
+                    <p className="text-[11px] mt-0.5" style={{ opacity: 0.9 }}>
+                      Pemisahan PDF dilakukan secara lokal di browser Anda. Menutup halaman ini akan menghentikan proses pemisahan.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
