@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
-import SplitterPage from "../components/SplitterPage";
-import TurnitinMerger from "../components/TurnitinMerger";
+import FullRepositoryPage from "../components/FullRepositoryPage";
 import { ToastContainer } from "../components/Toast";
 
 export function meta({}: Route.MetaArgs) {
@@ -10,7 +9,7 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Panduan lengkap dan alat bantu persiapan file upload Repository Universitas Sriwijaya. Split PDF skripsi, merger Turnitin, dan panduan upload — semua diproses di browser.",
+        "Panduan lengkap dan alat bantu persiapan file upload Repository Universitas Sriwijaya. Gabungkan PDF Turnitin, kompres cover, split bab skripsi — semua diproses di browser.",
     },
     { name: "keywords", content: "repository unsri, pdf splitter, skripsi, tugas akhir, unsri, panduan upload" },
     { property: "og:title", content: "Repository UNSRI Guide — Panduan & Alat Upload" },
@@ -18,30 +17,16 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-type Feature = "splitter" | "turnitin" | "guide";
+type Feature = "generator" | "guide";
 
 const FEATURES: { id: Feature; label: string; desc: string; icon: React.ReactNode; soon?: boolean }[] = [
   {
-    id: "splitter",
-    label: "PDF Splitter",
-    desc: "Pisahkan skripsi per bab",
+    id: "generator",
+    label: "Penyusun Berkas RAMA",
+    desc: "Buat paket berkas repository",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="12" y1="11" x2="12" y2="17" />
-        <polyline points="9 14 12 11 15 14" />
-      </svg>
-    ),
-  },
-  {
-    id: "turnitin",
-    label: "Turnitin Merger",
-    desc: "Gabungkan laporan Turnitin",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-        <path d="M16 3H8l-2 4h12z" />
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
       </svg>
     ),
   },
@@ -60,7 +45,7 @@ const FEATURES: { id: Feature; label: string; desc: string; icon: React.ReactNod
 ];
 
 export default function Home() {
-  const [feature, setFeature] = useState<Feature>("splitter");
+  const [feature, setFeature] = useState<Feature>("generator");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -123,8 +108,7 @@ export default function Home() {
               </h2>
             </div>
             <p className="text-sm max-w-md" style={{ color: "oklch(55% 0.02 245)" }}>
-              Upload PDF skripsi, isi metadata, dan dapatkan semua file siap upload
-              sesuai standar Repository Universitas Sriwijaya.
+              Gabungkan PDF, kompres cover, split bab skripsi, dan unduh paket berkas lengkap siap upload sesuai standar Repository RAMA Universitas Sriwijaya.
             </p>
           </div>
           <div className="separator" />
@@ -181,7 +165,7 @@ export default function Home() {
                     </svg>
                   ),
                   title: "Standar Repository",
-                  desc: "Penamaan file otomatis sesuai standar UNSRI.",
+                  desc: "Penamaan file otomatis sesuai standar RAMA UNSRI.",
                 },
               ].map((card) => (
                 <div
@@ -201,8 +185,8 @@ export default function Home() {
 
           {/* Content area */}
           <div className="flex-1 min-w-0">
-            {/* Splitter */}
-            <div hidden={feature !== "splitter"}>
+            {/* Generator */}
+            <div hidden={feature !== "generator"}>
               {!mounted ? (
                 <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
                   <div className="space-y-4">
@@ -213,23 +197,7 @@ export default function Home() {
                   <div className="h-10 w-full rounded bg-white/5" />
                 </div>
               ) : (
-                feature === "splitter" && <SplitterPage />
-              )}
-            </div>
-
-            {/* Turnitin */}
-            <div hidden={feature !== "turnitin"}>
-              {!mounted ? (
-                <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
-                  <div className="space-y-4">
-                    <div className="h-6 w-3/4 rounded bg-white/5" />
-                    <div className="h-4 w-1/2 rounded bg-white/5" />
-                    <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
-                  </div>
-                  <div className="h-10 w-full rounded bg-white/5" />
-                </div>
-              ) : (
-                feature === "turnitin" && <TurnitinMerger />
+                feature === "generator" && <FullRepositoryPage />
               )}
             </div>
 

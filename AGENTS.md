@@ -350,7 +350,24 @@ The application should support:
 
 # Future Roadmap
 
-The application is planned to grow beyond a simple PDF splitter and Turnitin merger into a comprehensive Repository UNSRI preparation hub for students of Universitas Sriwijaya.
+The application has evolved from a simple PDF splitter and Turnitin merger into a comprehensive Repository UNSRI preparation hub for students of Universitas Sriwijaya.
+
+## Completed Features
+
+### 1. Penyusun Berkas RAMA (All-in-one Generator)
+- Integrates complete repository package creation in a single workflow.
+- **Client-side Cover Image Compression**: Compresses hardcover scan/photo to under 500KB fully inside the browser.
+- **RAMA Standard File Packaging**: Automatically converts, renames, and packages:
+  - `RAMA_KODE_NIM_cover.jpg`
+  - `RAMA_KODE_NIM.pdf`
+  - `RAMA_KODE_NIM_TURNITIN.pdf`
+  - Split chapters (`RAMA_..._01_front_ref.pdf`, `02.pdf`, etc.)
+- Packs all files into a single ZIP file download.
+
+### 2. UI/UX Redesign
+- Curated dark-academic color palette featuring deep navy-blue primary tones (`oklch(55% 0.16 245)`) and gold accent details (`oklch(72% 0.16 85)`).
+- Responsive sidebar navigation (supports all-in-one generator and guide).
+- Transitions and micro-animations for page progress steps.
 
 ## Planned Features
 
@@ -362,14 +379,6 @@ The application will provide an integrated step-by-step guide that helps student
 - **Account Setup Walkthrough**: A visual, step-by-step guide explaining how to register and set up a Repository UNSRI account correctly.
 - **Upload Guide**: A detailed, illustrated tutorial on how to upload the prepared files to the Repository UNSRI system, covering file order, required metadata fields, and common mistakes to avoid.
 
-### UI/UX Redesign (COMPLETED)
-
-The interface has undergone a full visual and structural redesign to achieve a **professional, academic-grade** aesthetic appropriate for a university thesis submission tool:
-
-- **Institutional Design Theme**: Implemented a curated dark-academic color palette featuring deep navy-blue primary tones (`oklch(55% 0.16 245)`) and gold accent details (`oklch(72% 0.16 85)`).
-- **Responsive Layout**: Replaced the simple inline tabs with a flexible responsive sidebar navigation system (supporting Splitter, Turnitin Merger, and Guide sections) that adapts to mobile screens.
-- **Micro-Animations & Visual Cues**: Added floating key buttons (e.g. automatic detection with gold/sparkle visual cue) and full-screen glassmorphic loading overlays aligned with the theme.
-- **Transition Smoothness**: Enforced viewport scroll adjustments on step transitions to prevent layout disorientation.
 
 ---
 

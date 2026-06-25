@@ -43,6 +43,33 @@ export function buildTurnitinFilename(meta: { kode: string; nim: string }): stri
   return `${meta.kode}_${meta.nim}_TURNITIN.pdf`;
 }
 
+// ---- RAMA-prefixed filenames (official Repository UNSRI standard) ----
+
+export function buildRamaFilename(
+  meta: RepositoryMetadata,
+  suffix?: string,
+  ext = "pdf"
+): string {
+  const parts = ["RAMA", meta.kode, meta.nim, meta.nidn1];
+  if (meta.nidn2 && meta.nidn2.trim() !== "") {
+    parts.push(meta.nidn2.trim());
+  }
+  if (suffix) parts.push(suffix);
+  return `${parts.join("_")}.${ext}`;
+}
+
+export function buildRamaFullFilename(meta: { kode: string; nim: string }): string {
+  return `RAMA_${meta.kode}_${meta.nim}.pdf`;
+}
+
+export function buildRamaTurnitinFilename(meta: { kode: string; nim: string }): string {
+  return `RAMA_${meta.kode}_${meta.nim}_TURNITIN.pdf`;
+}
+
+export function buildRamaCoverFilename(meta: { kode: string; nim: string }): string {
+  return `RAMA_${meta.kode}_${meta.nim}_cover.jpg`;
+}
+
 export function getDefaultSections(): SplitSection[] {
   return [
     {
