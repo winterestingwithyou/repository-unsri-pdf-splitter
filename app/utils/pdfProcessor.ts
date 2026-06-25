@@ -87,7 +87,7 @@ export function getDefaultSections(): SplitSection[] {
       filenameSuffix: "02",
       range: null,
       required: true,
-      description: "Bab 2 - Tinjauan Pustaka / Landasan Teori",
+      description: "",
     },
     {
       id: "bab3",
@@ -95,7 +95,7 @@ export function getDefaultSections(): SplitSection[] {
       filenameSuffix: "03",
       range: null,
       required: true,
-      description: "Bab 3 - Metodologi Penelitian",
+      description: "",
     },
     {
       id: "bab4",
@@ -103,7 +103,7 @@ export function getDefaultSections(): SplitSection[] {
       filenameSuffix: "04",
       range: null,
       required: true,
-      description: "Bab 4 - Hasil dan Pembahasan",
+      description: "",
     },
     {
       id: "bab5",
@@ -111,7 +111,7 @@ export function getDefaultSections(): SplitSection[] {
       filenameSuffix: "05",
       range: null,
       required: true,
-      description: "Bab 5 - Penutup / Kesimpulan",
+      description: "",
     },
     {
       id: "daftar_pustaka",

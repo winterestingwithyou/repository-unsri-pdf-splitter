@@ -16,6 +16,7 @@ import {
   extractPageTexts,
   getPdfPageCount,
   recalculateSuffixes,
+  toRoman,
   type SplitSection,
   type RepositoryMetadata,
   type PageRange,
@@ -218,7 +219,38 @@ function CompleteRepositoryFlow() {
       const detected = detectChapterPages(pageTexts);
       const ranges = buildDetectedRanges(detected, totalPages);
 
-      const updated = sections.map((s) => {
+      // Find the maximum chapter index in detected ranges
+      const rangeBabIds = Object.keys(ranges)
+        .filter((k) => k.startsWith("bab"))
+        .map((k) => parseInt(k.replace("bab", ""), 10));
+      const maxBabNum = rangeBabIds.length > 0 ? Math.max(...rangeBabIds) : 5;
+
+      let updatedSections = [...sections];
+      let addedAny = false;
+      for (let b = 6; b <= maxBabNum; b++) {
+        const babId = `bab${b}`;
+        if (!updatedSections.some((s) => s.id === babId)) {
+          const babIndices = updatedSections
+            .map((s, idx) => ({ id: s.id, idx }))
+            .filter((s) => s.id.startsWith("bab"));
+          const insertIdx = babIndices.length > 0 ? babIndices[babIndices.length - 1].idx + 1 : 5;
+          updatedSections.splice(insertIdx, 0, {
+            id: babId,
+            label: `BAB ${toRoman(b)}`,
+            filenameSuffix: String(b).padStart(2, "0"),
+            range: null,
+            required: false,
+            description: "",
+          });
+          addedAny = true;
+        }
+      }
+
+      if (addedAny) {
+        updatedSections = recalculateSuffixes(updatedSections);
+      }
+
+      const finalSections = updatedSections.map((s) => {
         const key = s.id;
         const range = ranges[key];
         const range2 = key === "front_ref" ? ranges["front_ref_range2"] : undefined;
@@ -229,14 +261,48 @@ function CompleteRepositoryFlow() {
         };
       });
 
-      setSections(updated);
-      showToast("success", "Deteksi bab selesai!");
+      setSections(finalSections);
+      showToast("success", "Deteksi bab selesai! Bab baru ditambahkan otomatis jika terdeteksi.");
     } catch (err) {
       console.error(err);
       showToast("error", "Gagal mendeteksi bab secara otomatis.");
     } finally {
       setDetecting(false);
     }
+  }
+
+  function handleAddChapter() {
+    setSections((prev) => {
+      const babIndices = prev
+        .map((s, idx) => ({ id: s.id, idx }))
+        .filter((s) => s.id.startsWith("bab"));
+      const lastBabIdx = babIndices.length > 0 ? babIndices[babIndices.length - 1].idx : 0;
+      
+      const babIds = babIndices.map((b) => parseInt(b.id.replace("bab", "")));
+      const nextBabNum = babIds.length > 0 ? Math.max(...babIds) + 1 : 2;
+      
+      const newChapter: SplitSection = {
+        id: `bab${nextBabNum}`,
+        label: `BAB ${toRoman(nextBabNum)}`,
+        filenameSuffix: String(nextBabNum).padStart(2, "0"),
+        range: null,
+        required: false,
+        description: "",
+      };
+
+      const updated = [...prev];
+      updated.splice(lastBabIdx + 1, 0, newChapter);
+      return recalculateSuffixes(updated);
+    });
+  }
+
+  function handleDeleteChapter(id: string) {
+    setSections((prev) => {
+      if (["bab2", "bab3", "bab4", "bab5"].includes(id)) {
+        return prev;
+      }
+      return recalculateSuffixes(prev.filter((s) => s.id !== id));
+    });
   }
 
   async function handleGenerateZip() {
@@ -608,8 +674,27 @@ function CompleteRepositoryFlow() {
                     setSections(next);
                   }}
                   onPreviewPage={setPreviewPage}
+                  onDelete={
+                    section.id.startsWith("bab") &&
+                    !["bab2", "bab3", "bab4", "bab5"].includes(section.id)
+                      ? handleDeleteChapter
+                      : undefined
+                  }
                 />
               ))}
+
+              <button
+                type="button"
+                className="btn btn-ghost w-full py-3 border border-dashed border-white/10 hover:border-white/20 hover:bg-white/5 transition-all text-sm font-medium flex items-center justify-center gap-2 mt-1"
+                style={{ borderRadius: "0.75rem" }}
+                onClick={handleAddChapter}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Tambah Bab Baru
+              </button>
 
               <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
                 <button className="btn btn-secondary flex-1" onClick={() => setStep("upload")}>

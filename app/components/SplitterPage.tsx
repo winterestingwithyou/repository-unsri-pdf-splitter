@@ -13,6 +13,7 @@ import {
   extractPageTexts,
   getPdfPageCount,
   recalculateSuffixes,
+  toRoman,
   type SplitSection,
   type RepositoryMetadata,
   type PageRange,
@@ -126,7 +127,38 @@ export default function SplitterPage() {
       const detected = detectChapterPages(pageTexts);
       const ranges = buildDetectedRanges(detected, totalPages);
 
-      const updated = sections.map((s) => {
+      // Find the maximum chapter index in detected ranges
+      const rangeBabIds = Object.keys(ranges)
+        .filter((k) => k.startsWith("bab"))
+        .map((k) => parseInt(k.replace("bab", ""), 10));
+      const maxBabNum = rangeBabIds.length > 0 ? Math.max(...rangeBabIds) : 5;
+
+      let updatedSections = [...sections];
+      let addedAny = false;
+      for (let b = 6; b <= maxBabNum; b++) {
+        const babId = `bab${b}`;
+        if (!updatedSections.some((s) => s.id === babId)) {
+          const babIndices = updatedSections
+            .map((s, idx) => ({ id: s.id, idx }))
+            .filter((s) => s.id.startsWith("bab"));
+          const insertIdx = babIndices.length > 0 ? babIndices[babIndices.length - 1].idx + 1 : 5;
+          updatedSections.splice(insertIdx, 0, {
+            id: babId,
+            label: `BAB ${toRoman(b)}`,
+            filenameSuffix: String(b).padStart(2, "0"),
+            range: null,
+            required: false,
+            description: "",
+          });
+          addedAny = true;
+        }
+      }
+
+      if (addedAny) {
+        updatedSections = recalculateSuffixes(updatedSections);
+      }
+
+      const finalSections = updatedSections.map((s) => {
         const key = s.id;
         const range = ranges[key];
         const range2 = key === "front_ref" ? ranges["front_ref_range2"] : undefined;
@@ -137,8 +169,8 @@ export default function SplitterPage() {
         };
       });
 
-      setSections(updated);
-      showToast("success", "Deteksi bab selesai!");
+      setSections(finalSections);
+      showToast("success", "Deteksi bab selesai! Bab baru ditambahkan otomatis jika terdeteksi.");
     } catch (err) {
       console.error(err);
       showToast("error", "Gagal mendeteksi bab secara otomatis.");
@@ -159,11 +191,11 @@ export default function SplitterPage() {
       
       const newChapter: SplitSection = {
         id: `bab${nextBabNum}`,
-        label: `BAB ${nextBabNum}`,
-        filenameSuffix: `${nextBabNum}`,
+        label: `BAB ${toRoman(nextBabNum)}`,
+        filenameSuffix: String(nextBabNum).padStart(2, "0"),
         range: null,
         required: false,
-        description: `Bab ${nextBabNum} - Bab Tambahan`,
+        description: "",
       };
 
       const updated = [...prev];
