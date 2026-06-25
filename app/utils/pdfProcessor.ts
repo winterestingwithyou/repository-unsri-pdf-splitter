@@ -10,6 +10,7 @@ export interface SplitSection {
   label: string;
   filenameSuffix: string;
   range: PageRange | null;
+  range2?: PageRange | null;
   required: boolean;
   description: string;
 }
@@ -45,33 +46,26 @@ export function buildTurnitinFilename(meta: { kode: string; nim: string }): stri
 export function getDefaultSections(): SplitSection[] {
   return [
     {
-      id: "front",
-      label: "Halaman Awal (01_front_ref)",
+      id: "front_ref",
+      label: "Halaman Awal & BAB I (01_front_ref)",
       filenameSuffix: "01_front_ref",
       range: null,
+      range2: null,
       required: true,
-      description: "Cover, lembar persetujuan, abstrak, daftar isi, dan semua halaman sebelum BAB I",
-    },
-    {
-      id: "bab1",
-      label: "BAB I",
-      filenameSuffix: "02",
-      range: null,
-      required: true,
-      description: "Bab 1 - Pendahuluan",
+      description: "Cover, abstrak, daftar isi, sampai dengan BAB I + Halaman Daftar Pustaka",
     },
     {
       id: "bab2",
       label: "BAB II",
-      filenameSuffix: "03",
+      filenameSuffix: "02",
       range: null,
-      required: false,
+      required: true,
       description: "Bab 2 - Tinjauan Pustaka / Landasan Teori",
     },
     {
       id: "bab3",
       label: "BAB III",
-      filenameSuffix: "04",
+      filenameSuffix: "03",
       range: null,
       required: false,
       description: "Bab 3 - Metodologi Penelitian",
@@ -79,7 +73,7 @@ export function getDefaultSections(): SplitSection[] {
     {
       id: "bab4",
       label: "BAB IV",
-      filenameSuffix: "05",
+      filenameSuffix: "04",
       range: null,
       required: false,
       description: "Bab 4 - Hasil dan Pembahasan",
@@ -87,14 +81,14 @@ export function getDefaultSections(): SplitSection[] {
     {
       id: "bab5",
       label: "BAB V",
-      filenameSuffix: "06",
+      filenameSuffix: "05",
       range: null,
       required: false,
       description: "Bab 5 - Penutup / Kesimpulan",
     },
     {
       id: "daftar_pustaka",
-      label: "Daftar Pustaka (06_ref)",
+      label: "Daftar Pustaka",
       filenameSuffix: "06_ref",
       range: null,
       required: true,
@@ -102,7 +96,7 @@ export function getDefaultSections(): SplitSection[] {
     },
     {
       id: "lampiran",
-      label: "Lampiran (07_lamp)",
+      label: "Lampiran",
       filenameSuffix: "07_lamp",
       range: null,
       required: false,
@@ -136,11 +130,11 @@ export async function splitPdf(
   return newDoc.save();
 }
 
-export async function mergePdfs(pdfBytesArray: ArrayBuffer[]): Promise<Uint8Array> {
+export async function mergePdfs(pdfBytesArray: (ArrayBuffer | Uint8Array)[]): Promise<Uint8Array> {
   const mergedDoc = await PDFDocument.create();
 
   for (const bytes of pdfBytesArray) {
-    const srcDoc = await PDFDocument.load(bytes.slice(0));
+    const srcDoc = await PDFDocument.load(bytes);
     const pageIndices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
     const copiedPages = await mergedDoc.copyPages(srcDoc, pageIndices);
     copiedPages.forEach((page) => mergedDoc.addPage(page));
@@ -258,17 +252,17 @@ export function recalculateSuffixes(sections: SplitSection[]): SplitSection[] {
   const numChapters = chapters.length;
 
   return sections.map((s) => {
-    if (s.id === "front") {
+    if (s.id === "front_ref") {
       return {
         ...s,
         filenameSuffix: "01_front_ref",
-        label: "Halaman Awal (01_front_ref)",
+        label: "Halaman Awal & BAB I (01_front_ref)",
       };
     }
     if (s.id.startsWith("bab")) {
       const idx = chapters.findIndex((c) => c.id === s.id);
       const numStr = String(idx + 2).padStart(2, "0");
-      const roman = toRoman(idx + 1);
+      const roman = toRoman(idx + 2);
       return {
         ...s,
         filenameSuffix: numStr,
@@ -376,21 +370,13 @@ export function buildDetectedRanges(
   if (detectedPages["daftar_pustaka"]) orderedKeys.push("daftar_pustaka");
   if (detectedPages["lampiran"]) orderedKeys.push("lampiran");
 
-  // front: page 1 to start of bab1 - 1
-  const firstBabPage = babKeys.length > 0 ? detectedPages[babKeys[0]] : null;
-  if (firstBabPage) {
-    ranges.front = { start: 1, end: firstBabPage - 1 };
-  } else {
-    ranges.front = { start: 1, end: 1 };
-  }
-
-  // Each chapter/section: from its start page to the page before the next chapter
+  // Determine end page for each detected section
+  const sectionEndPages: Record<string, number> = {};
   for (let i = 0; i < orderedKeys.length; i++) {
     const currentKey = orderedKeys[i];
     const startPage = detectedPages[currentKey];
     if (!startPage) continue;
 
-    // Find the end page (next chapter's start - 1 or totalPages)
     let endPage = totalPages;
     for (let j = i + 1; j < orderedKeys.length; j++) {
       const nextKey = orderedKeys[j];
@@ -400,8 +386,47 @@ export function buildDetectedRanges(
         break;
       }
     }
+    sectionEndPages[currentKey] = endPage;
+  }
 
-    ranges[currentKey] = { start: startPage, end: endPage };
+  // Map to our UI section IDs:
+  // 1. front_ref (Cover to BAB I end, and Daftar Pustaka range):
+  const bab2Page = detectedPages["bab2"];
+  const dpPage = detectedPages["daftar_pustaka"];
+  
+  let frontEnd = totalPages;
+  if (bab2Page) {
+    frontEnd = bab2Page - 1;
+  } else if (dpPage) {
+    frontEnd = dpPage - 1;
+  }
+  ranges["front_ref"] = { start: 1, end: frontEnd };
+
+  if (dpPage) {
+    ranges["front_ref_range2"] = { start: dpPage, end: sectionEndPages["daftar_pustaka"] || totalPages };
+  } else {
+    ranges["front_ref_range2"] = { start: totalPages, end: totalPages };
+  }
+
+  // 2. Chapters: bab2, bab3, bab4...
+  for (const babKey of babKeys) {
+    if (babKey === "bab1") continue; // bab1 is merged in front_ref
+    const start = detectedPages[babKey];
+    const end = sectionEndPages[babKey] || totalPages;
+    if (start) {
+      ranges[babKey] = { start, end };
+    }
+  }
+
+  // 3. Daftar Pustaka (Stand-alone):
+  if (dpPage) {
+    ranges["daftar_pustaka"] = { start: dpPage, end: sectionEndPages["daftar_pustaka"] || totalPages };
+  }
+
+  // 4. Lampiran:
+  const lampPage = detectedPages["lampiran"];
+  if (lampPage) {
+    ranges["lampiran"] = { start: lampPage, end: sectionEndPages["lampiran"] || totalPages };
   }
 
   return ranges;

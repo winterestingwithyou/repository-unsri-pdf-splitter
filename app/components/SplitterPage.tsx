@@ -5,6 +5,7 @@ const { saveAs } = FileSaver;
 import {
   getDefaultSections,
   splitPdf,
+  mergePdfs,
   buildFilename,
   buildFullFilename,
   detectChapterPages,
@@ -135,10 +136,19 @@ export default function SplitterPage() {
 
         updated = recalculateSuffixes(updated);
 
-        return updated.map((s) => ({
-          ...s,
-          range: ranges[s.id] ?? s.range,
-        }));
+        return updated.map((s) => {
+          if (s.id === "front_ref") {
+            return {
+              ...s,
+              range: ranges["front_ref"] ?? s.range,
+              range2: ranges["front_ref_range2"] ?? s.range2,
+            };
+          }
+          return {
+            ...s,
+            range: ranges[s.id] ?? s.range,
+          };
+        });
       });
       showToast("success", "Deteksi otomatis selesai! Silakan periksa rentang halaman.");
     } catch (e) {
@@ -156,8 +166,10 @@ export default function SplitterPage() {
         .filter((s) => s.id.startsWith("bab"));
       const lastBabIdx = babIndices.length > 0 ? babIndices[babIndices.length - 1].idx : 0;
       
-      // Determine next bab number based on current count
-      const nextBabNum = babIndices.length + 1;
+      // Determine next bab number based on the highest existing index in the list
+      const babIds = babIndices.map((b) => parseInt(b.id.replace("bab", "")));
+      const nextBabNum = babIds.length > 0 ? Math.max(...babIds) + 1 : 2;
+      
       const newChapter: SplitSection = {
         id: `bab${nextBabNum}`,
         label: `BAB ${nextBabNum}`,
@@ -183,7 +195,9 @@ export default function SplitterPage() {
   // ---------- STEP 4: Generate ZIP ----------
   async function handleGenerate() {
     // Validate required sections
-    const requiredMissing = sections.filter((s) => s.required && !s.range);
+    const requiredMissing = sections.filter(
+      (s) => s.required && (!s.range || (s.range2 !== undefined && !s.range2))
+    );
     if (requiredMissing.length > 0) {
       showToast("error", `Atur rentang untuk: ${requiredMissing.map((s) => s.label).join(", ")}`);
       return;
@@ -203,17 +217,40 @@ export default function SplitterPage() {
       zip.file(fullName, pdfBytes);
       setGenerateProgress(10);
 
-      // Split sections
-      const activeSections = sections.filter((s) => s.range);
-      const total = activeSections.length;
+      // 1. Process 01_front_ref (Front Matter + References merged)
+      setGenerateStatus("Membuat Halaman Awal & References (01_front_ref)...");
+      const frontRef = sections.find((s) => s.id === "front_ref");
+      
+      if (frontRef?.range && frontRef?.range2) {
+        const bytes1 = await splitPdf(pdfBytes, frontRef.range);
+        const bytes2 = await splitPdf(pdfBytes, frontRef.range2);
+        const mergedFrontBytes = await mergePdfs([bytes1, bytes2]);
+        const filename = buildFilename(meta, "01_front_ref");
+        zip.file(filename, mergedFrontBytes);
+      } else {
+        if (frontRef?.range) {
+          const bytes1 = await splitPdf(pdfBytes, frontRef.range);
+          zip.file(buildFilename(meta, "01_front_ref"), bytes1);
+        } else if (frontRef?.range2) {
+          const bytes2 = await splitPdf(pdfBytes, frontRef.range2);
+          zip.file(buildFilename(meta, "01_front_ref"), bytes2);
+        }
+      }
+      setGenerateProgress(30);
 
-      for (let i = 0; i < total; i++) {
-        const section = activeSections[i];
+      // 2. Process other sections (chapters starting from BAB II, Daftar Pustaka stand-alone, and Lampiran)
+      const otherSections = sections.filter(
+        (s) => s.id !== "front_ref" && s.range
+      );
+      const totalOthers = otherSections.length;
+
+      for (let i = 0; i < totalOthers; i++) {
+        const section = otherSections[i];
         setGenerateStatus(`Memotong ${section.label}...`);
         const splitBytes = await splitPdf(pdfBytes, section.range!);
         const filename = buildFilename(meta, section.filenameSuffix);
         zip.file(filename, splitBytes);
-        setGenerateProgress(10 + Math.round(((i + 1) / total) * 85));
+        setGenerateProgress(30 + Math.round(((i + 1) / totalOthers) * 65));
       }
 
       setGenerateStatus("Membuat ZIP...");
@@ -237,6 +274,12 @@ export default function SplitterPage() {
   function updateSectionRange(sectionId: string, range: PageRange | null) {
     setSections((prev) =>
       prev.map((s) => (s.id === sectionId ? { ...s, range } : s))
+    );
+  }
+
+  function updateSectionRange2(sectionId: string, range2: PageRange | null) {
+    setSections((prev) =>
+      prev.map((s) => (s.id === sectionId ? { ...s, range2 } : s))
     );
   }
 
@@ -503,12 +546,13 @@ export default function SplitterPage() {
                   section={section}
                   totalPages={totalPages}
                   onChange={updateSectionRange}
+                  onChange2={updateSectionRange2}
                   onPreviewPage={(page) => {
                     setPreviewPage(page);
                     setActiveSectionId(section.id);
                   }}
                   onDelete={
-                    section.id.startsWith("bab") && section.id !== "bab1"
+                    section.id.startsWith("bab") && section.id !== "bab2"
                       ? handleDeleteChapter
                       : undefined
                   }
@@ -533,7 +577,7 @@ export default function SplitterPage() {
                 <button
                   className="btn btn-primary flex-1"
                   onClick={() => setStep("generate")}
-                  disabled={sections.filter((s) => s.required && !s.range).length > 0}
+                  disabled={sections.some((s) => s.required && (!s.range || (s.range2 !== undefined && !s.range2)))}
                 >
                   Lanjut ke Generate →
                 </button>
@@ -579,13 +623,17 @@ export default function SplitterPage() {
             </p>
             <div className="flex flex-col gap-2">
               <div className="filename-chip">{buildFullFilename(meta)}</div>
-              {sections
-                .filter((s) => s.range)
-                .map((s) => (
-                  <div key={s.id} className="filename-chip">
-                    {buildFilename(meta, s.filenameSuffix)}
-                  </div>
-                ))}
+              {Array.from(
+                new Set(
+                  sections
+                    .filter((s) => s.range)
+                    .map((s) => buildFilename(meta, s.filenameSuffix))
+                )
+              ).map((name) => (
+                <div key={name} className="filename-chip">
+                  {name}
+                </div>
+              ))}
             </div>
           </div>
 
