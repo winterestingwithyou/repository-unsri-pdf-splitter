@@ -187,6 +187,9 @@ export default function SplitterPage() {
 
   const handleDeleteChapter = useCallback((id: string) => {
     setSections((prev) => {
+      if (["bab2", "bab3", "bab4", "bab5"].includes(id)) {
+        return prev;
+      }
       const filtered = prev.filter((s) => s.id !== id);
       return recalculateSuffixes(filtered);
     });
@@ -552,7 +555,8 @@ export default function SplitterPage() {
                     setActiveSectionId(section.id);
                   }}
                   onDelete={
-                    section.id.startsWith("bab") && section.id !== "bab2"
+                    section.id.startsWith("bab") &&
+                    !["bab2", "bab3", "bab4", "bab5"].includes(section.id)
                       ? handleDeleteChapter
                       : undefined
                   }

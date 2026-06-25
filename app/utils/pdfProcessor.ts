@@ -67,7 +67,7 @@ export function getDefaultSections(): SplitSection[] {
       label: "BAB III",
       filenameSuffix: "03",
       range: null,
-      required: false,
+      required: true,
       description: "Bab 3 - Metodologi Penelitian",
     },
     {
@@ -75,7 +75,7 @@ export function getDefaultSections(): SplitSection[] {
       label: "BAB IV",
       filenameSuffix: "04",
       range: null,
-      required: false,
+      required: true,
       description: "Bab 4 - Hasil dan Pembahasan",
     },
     {
@@ -83,7 +83,7 @@ export function getDefaultSections(): SplitSection[] {
       label: "BAB V",
       filenameSuffix: "05",
       range: null,
-      required: false,
+      required: true,
       description: "Bab 5 - Penutup / Kesimpulan",
     },
     {
@@ -99,7 +99,7 @@ export function getDefaultSections(): SplitSection[] {
       label: "Lampiran",
       filenameSuffix: "07_lamp",
       range: null,
-      required: false,
+      required: true,
       description: "Lampiran-lampiran pendukung",
     },
   ];
