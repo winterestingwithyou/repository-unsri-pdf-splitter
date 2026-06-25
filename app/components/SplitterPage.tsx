@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import JSZip from "jszip";
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
@@ -17,17 +17,16 @@ import {
   type RepositoryMetadata,
   type PageRange,
 } from "../utils/pdfProcessor";
-import { FileDropZone } from "../components/FileDropZone";
-import { StudyProgramSelect } from "../components/StudyProgramSelect";
-import { SectionRangeEditor } from "../components/SectionRangeEditor";
-import { PdfPagePreview } from "../components/PdfPagePreview";
-import { showToast } from "../components/Toast";
+import { FileDropZone } from "./FileDropZone";
+import { StudyProgramSelect } from "./StudyProgramSelect";
+import { SectionRangeEditor } from "./SectionRangeEditor";
+import { PdfPagePreview } from "./PdfPagePreview";
+import { showToast } from "./Toast";
 import type { StudyProgram } from "../data/studyPrograms";
 
-type Step = "upload" | "metadata" | "ranges" | "generate";
+type Step = "upload" | "ranges" | "download";
 
 export default function SplitterPage() {
-  // Step
   const [step, setStep] = useState<Step>("upload");
 
   // Reset scroll to top when changing steps
@@ -35,12 +34,12 @@ export default function SplitterPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
-  // File
+  // Files State
   const [file, setFile] = useState<File | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Metadata
+  // Metadata State
   const [meta, setMeta] = useState<RepositoryMetadata>({
     kode: "",
     nim: "",
@@ -48,25 +47,22 @@ export default function SplitterPage() {
     nidn2: "",
   });
   const [selectedProgram, setSelectedProgram] = useState<StudyProgram | null>(null);
-  const [metaErrors, setMetaErrors] = useState<Partial<Record<keyof RepositoryMetadata, string>>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Sections
+  // Sections State
   const [sections, setSections] = useState<SplitSection[]>(recalculateSuffixes(getDefaultSections()));
   const [previewPage, setPreviewPage] = useState(1);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
-  // Detect state
+  // Auto Detect State
   const [detecting, setDetecting] = useState(false);
   const [detectProgress, setDetectProgress] = useState(0);
 
-  // Generate state
+  // Generate State
   const [generating, setGenerating] = useState(false);
   const [generateProgress, setGenerateProgress] = useState(0);
   const [generateStatus, setGenerateStatus] = useState("");
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ---------- STEP 1: Upload ----------
   async function handleFile(f: File) {
     try {
       const bytes = await f.arrayBuffer();
@@ -81,98 +77,70 @@ export default function SplitterPage() {
     }
   }
 
-  // ---------- STEP 2: Metadata Validation ----------
   function validateMeta(): boolean {
-    const errors: typeof metaErrors = {};
-    if (!meta.kode.trim()) errors.kode = "Program studi wajib dipilih";
+    const e: Record<string, string> = {};
+    if (!meta.kode.trim()) e.kode = "Program studi wajib dipilih";
     
     if (!meta.nim.trim()) {
-      errors.nim = "NIM wajib diisi";
+      e.nim = "NIM wajib diisi";
     } else if (!/^\d+$/.test(meta.nim.trim())) {
-      errors.nim = "NIM hanya boleh angka";
+      e.nim = "NIM hanya boleh angka";
     }
-    
+
     if (!meta.nidn1.trim()) {
-      errors.nidn1 = "NIDN Pembimbing 1 wajib diisi";
+      e.nidn1 = "NIDN Pembimbing 1 wajib diisi";
     } else if (!/^\d+$/.test(meta.nidn1.trim())) {
-      errors.nidn1 = "NIDN hanya boleh angka";
+      e.nidn1 = "NIDN hanya boleh angka";
     } else if (meta.nidn1.trim().length !== 10) {
-      errors.nidn1 = "NIDN harus tepat 10 digit";
+      e.nidn1 = "NIDN harus tepat 10 digit";
     }
-    
-    if (meta.nidn2 && meta.nidn2.trim()) {
+
+    if (meta.nidn2 && meta.nidn2.trim() !== "") {
       if (!/^\d+$/.test(meta.nidn2.trim())) {
-        errors.nidn2 = "NIDN hanya boleh angka";
+        e.nidn2 = "NIDN hanya boleh angka";
       } else if (meta.nidn2.trim().length !== 10) {
-        errors.nidn2 = "NIDN harus tepat 10 digit";
+        e.nidn2 = "NIDN harus tepat 10 digit";
       }
     }
-    setMetaErrors(errors);
-    return Object.keys(errors).length === 0;
+
+    if (!file) e.file = "File PDF skripsi lengkap wajib diunggah";
+
+    setErrors(e);
+    if (Object.keys(e).length > 0) {
+      showToast("error", "Harap lengkapi formulir dan upload berkas skripsi.");
+      return false;
+    }
+    return true;
   }
 
-  // ---------- STEP 3: Auto Detect ----------
   async function handleAutoDetect() {
     if (!pdfBytes) return;
     setDetecting(true);
     setDetectProgress(0);
+
     try {
-      const texts = await extractPageTexts(pdfBytes, (page, total) => {
-        setDetectProgress(Math.round((page / total) * 100));
+      const pageTexts = await extractPageTexts(pdfBytes, (current, total) => {
+        setDetectProgress(Math.round((current / total) * 100));
       });
-      const detected = detectChapterPages(texts);
+
+      const detected = detectChapterPages(pageTexts);
       const ranges = buildDetectedRanges(detected, totalPages);
 
-      setSections((prev) => {
-        let updated = [...prev];
-        const detectedKeys = Object.keys(ranges);
-        const babKeys = detectedKeys
-          .filter((k) => k.startsWith("bab"))
-          .sort((a, b) => {
-            const numA = parseInt(a.replace("bab", ""));
-            const numB = parseInt(b.replace("bab", ""));
-            return numA - numB;
-          });
-
-        // Ensure all detected chapters exist in updated
-        for (const babKey of babKeys) {
-          if (!updated.some((s) => s.id === babKey)) {
-            const babNum = parseInt(babKey.replace("bab", ""));
-            const newChapter: SplitSection = {
-              id: babKey,
-              label: `BAB ${babNum}`,
-              filenameSuffix: `${babNum}`,
-              range: null,
-              required: false,
-              description: `Bab ${babNum} - Terdeteksi otomatis`,
-            };
-            const lastBabIdx = updated.reduce(
-              (acc, s, idx) => (s.id.startsWith("bab") ? idx : acc),
-              0
-            );
-            updated.splice(lastBabIdx + 1, 0, newChapter);
-          }
-        }
-
-        updated = recalculateSuffixes(updated);
-
-        return updated.map((s) => {
-          if (s.id === "front_ref") {
-            return {
-              ...s,
-              range: ranges["front_ref"] ?? s.range,
-              range2: ranges["front_ref_range2"] ?? s.range2,
-            };
-          }
-          return {
-            ...s,
-            range: ranges[s.id] ?? s.range,
-          };
-        });
+      const updated = sections.map((s) => {
+        const key = s.id;
+        const range = ranges[key];
+        const range2 = key === "front_ref" ? ranges["front_ref_range2"] : undefined;
+        return {
+          ...s,
+          range: range || null,
+          range2: range2 !== undefined ? range2 : s.range2,
+        };
       });
-      showToast("success", "Deteksi otomatis selesai! Silakan periksa rentang halaman.");
-    } catch (e) {
-      console.error("[AutoDetect] Error:", e);
+
+      setSections(updated);
+      showToast("success", "Deteksi bab selesai!");
+    } catch (err) {
+      console.error(err);
       showToast("error", "Gagal mendeteksi bab secara otomatis.");
     } finally {
       setDetecting(false);
@@ -186,7 +154,6 @@ export default function SplitterPage() {
         .filter((s) => s.id.startsWith("bab"));
       const lastBabIdx = babIndices.length > 0 ? babIndices[babIndices.length - 1].idx : 0;
       
-      // Determine next bab number based on the highest existing index in the list
       const babIds = babIndices.map((b) => parseInt(b.id.replace("bab", "")));
       const nextBabNum = babIds.length > 0 ? Math.max(...babIds) + 1 : 2;
       
@@ -210,14 +177,11 @@ export default function SplitterPage() {
       if (["bab2", "bab3", "bab4", "bab5"].includes(id)) {
         return prev;
       }
-      const filtered = prev.filter((s) => s.id !== id);
-      return recalculateSuffixes(filtered);
+      return recalculateSuffixes(prev.filter((s) => s.id !== id));
     });
   }, []);
 
-  // ---------- STEP 4: Generate ZIP ----------
-  async function handleGenerate() {
-    // Validate required sections
+  async function handleGenerateZip() {
     const requiredMissing = sections.filter(
       (s) => s.required && (!s.range || (s.range2 !== undefined && !s.range2))
     );
@@ -226,7 +190,7 @@ export default function SplitterPage() {
       return;
     }
 
-    if (!pdfBytes) return;
+    if (!file || !pdfBytes) return;
 
     setGenerating(true);
     setGenerateProgress(0);
@@ -235,311 +199,232 @@ export default function SplitterPage() {
     try {
       const zip = new JSZip();
 
-      // Full PDF
-      setGenerateStatus("Menambahkan PDF lengkap...");
-      const fullName = buildFullFilename(meta);
-      zip.file(fullName, pdfBytes);
-      setGenerateProgress(10);
+      // 1. Add complete thesis PDF
+      setGenerateStatus("Menambahkan PDF Skripsi Lengkap...");
+      const fullThesisName = buildFullFilename(meta);
+      zip.file(fullThesisName, pdfBytes);
+      setGenerateProgress(20);
 
-      // 1. Process 01_front_ref (Front Matter + References merged)
-      setGenerateStatus("Membuat Halaman Awal & References (01_front_ref)...");
-      const frontRef = sections.find((s) => s.id === "front_ref");
-      
-      if (frontRef?.range && frontRef?.range2) {
-        const bytes1 = await splitPdf(pdfBytes, frontRef.range);
-        const bytes2 = await splitPdf(pdfBytes, frontRef.range2);
-        const mergedFrontBytes = await mergePdfs([bytes1, bytes2]);
-        const filename = buildFilename(meta, "01_front_ref");
-        zip.file(filename, mergedFrontBytes);
-      } else {
-        if (frontRef?.range) {
-          const bytes1 = await splitPdf(pdfBytes, frontRef.range);
-          zip.file(buildFilename(meta, "01_front_ref"), bytes1);
-        } else if (frontRef?.range2) {
-          const bytes2 = await splitPdf(pdfBytes, frontRef.range2);
-          zip.file(buildFilename(meta, "01_front_ref"), bytes2);
+      // 2. Split PDF Chapters
+      const totalSteps = sections.length;
+      for (let i = 0; i < sections.length; i++) {
+        const sec = sections[i];
+        setGenerateStatus(`Membuat ${sec.label}...`);
+
+        if (sec.id === "front_ref" && sec.range && sec.range2) {
+          const bytes1 = await splitPdf(pdfBytes, sec.range);
+          const bytes2 = await splitPdf(pdfBytes, sec.range2);
+          const mergedFront = await mergePdfs([bytes1, bytes2]);
+          zip.file(buildFilename(meta, sec.filenameSuffix), mergedFront);
+        } else {
+          if (sec.range) {
+            const bytes = await splitPdf(pdfBytes, sec.range);
+            zip.file(buildFilename(meta, sec.filenameSuffix), bytes);
+          }
         }
-      }
-      setGenerateProgress(30);
-
-      // 2. Process other sections (chapters starting from BAB II, Daftar Pustaka stand-alone, and Lampiran)
-      const otherSections = sections.filter(
-        (s) => s.id !== "front_ref" && s.range
-      );
-      const totalOthers = otherSections.length;
-
-      for (let i = 0; i < totalOthers; i++) {
-        const section = otherSections[i];
-        setGenerateStatus(`Memotong ${section.label}...`);
-        const splitBytes = await splitPdf(pdfBytes, section.range!);
-        const filename = buildFilename(meta, section.filenameSuffix);
-        zip.file(filename, splitBytes);
-        setGenerateProgress(30 + Math.round(((i + 1) / totalOthers) * 65));
+        
+        const stepProgress = 20 + Math.round(((i + 1) / totalSteps) * 60);
+        setGenerateProgress(stepProgress);
       }
 
-      setGenerateStatus("Membuat ZIP...");
-      setGenerateProgress(96);
-      const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      setGenerateStatus("Mengemas ke dalam file ZIP...");
+      const content = await zip.generateAsync({ type: "blob" });
+      const zipFilename = `${meta.kode}_${meta.nim}_SPLIT.zip`;
+      saveAs(content, zipFilename);
+
       setGenerateProgress(100);
-
-      const zipName = `${meta.kode}_${meta.nim}.zip`;
-      saveAs(zipBlob, zipName);
-      showToast("success", `ZIP berhasil diunduh: ${zipName}`);
-      setStep("generate");
+      showToast("success", "File split skripsi berhasil diunduh!");
+      setStep("download");
     } catch (e) {
-      showToast("error", "Terjadi kesalahan saat membuat ZIP.");
       console.error(e);
+      showToast("error", "Gagal memproses file. Pastikan dokumen yang diunggah valid.");
     } finally {
       setGenerating(false);
-      setGenerateStatus("");
     }
   }
 
-  function updateSectionRange(sectionId: string, range: PageRange | null) {
-    setSections((prev) =>
-      prev.map((s) => (s.id === sectionId ? { ...s, range } : s))
-    );
-  }
-
-  function updateSectionRange2(sectionId: string, range2: PageRange | null) {
-    setSections((prev) =>
-      prev.map((s) => (s.id === sectionId ? { ...s, range2 } : s))
-    );
-  }
-
-  const filenames = sections
-    .filter((s) => s.range)
-    .map((s) => buildFilename(meta, s.filenameSuffix));
-
-  const STEPS: { id: Step; label: string }[] = [
-    { id: "upload", label: "Upload PDF" },
-    { id: "metadata", label: "Metadata" },
-    { id: "ranges", label: "Rentang Halaman" },
-    { id: "generate", label: "Generate" },
-  ];
-
-  const stepOrder: Step[] = ["upload", "metadata", "ranges", "generate"];
-  const currentStepIdx = stepOrder.indexOf(step);
-
   return (
-    <div className="fade-in">
-      {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
-        {STEPS.map((s, i) => {
-          const idx = stepOrder.indexOf(s.id);
-          const done = idx < currentStepIdx;
-          const active = idx === currentStepIdx;
+    <div className="max-w-6xl mx-auto">
+      {/* Step Indicator */}
+      <div className="flex justify-center items-center gap-2 mb-8 select-none flex-wrap">
+        {[
+          { id: "upload", label: "Upload & Metadata" },
+          { id: "ranges", label: "Rentang Halaman" },
+          { id: "download", label: "Selesai & Unduh" },
+        ].map((s, idx) => {
+          const isActive = step === s.id;
+          const isDone =
+            (step === "ranges" && idx === 0) ||
+            (step === "download" && (idx === 0 || idx === 1));
+
           return (
             <div key={s.id} className="flex items-center gap-2">
-              {i > 0 && (
+              {idx > 0 && (
                 <div
-                  className="h-px w-8 flex-shrink-0"
-                  style={{ background: done ? "oklch(64% 0.22 165)" : "oklch(28% 0.025 250)" }}
+                  className="w-8 h-[2px] rounded"
+                  style={{
+                    background: isDone ? "oklch(55% 0.16 245)" : "oklch(20% 0.015 245)",
+                  }}
                 />
               )}
-              <button
-                className="flex items-center gap-2 flex-shrink-0"
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                onClick={() => {
-                  if (done) setStep(s.id);
-                }}
-                disabled={!done && !active}
-                aria-current={active ? "step" : undefined}
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  isActive
+                    ? "bg-brand text-white border border-brand/20 shadow-md"
+                    : isDone
+                    ? "bg-brand/10 text-brand border border-brand/20"
+                    : "bg-white/5 text-white/40 border border-white/5"
+                }`}
               >
                 <div
-                  className={`step-indicator ${
-                    done ? "step-done" : active ? "step-active" : "step-pending"
+                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                    isActive
+                      ? "bg-white text-brand"
+                      : isDone
+                      ? "bg-brand text-white"
+                      : "bg-white/10 text-white/50"
                   }`}
                 >
-                  {done ? "✓" : i + 1}
+                  {isDone ? "✓" : idx + 1}
                 </div>
-                <span
-                  className="text-sm font-medium hidden sm:block"
-                  style={{
-                    color: active
-                      ? "oklch(90% 0.02 250)"
-                      : done
-                      ? "oklch(70% 0.05 250)"
-                      : "oklch(45% 0.03 250)",
-                  }}
-                >
-                  {s.label}
-                </span>
-              </button>
+                {s.label}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* ===== STEP 1: Upload ===== */}
+      {/* STEP 1: Upload & Metadata */}
       {step === "upload" && (
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-xl font-semibold mb-2" style={{ color: "oklch(90% 0.02 250)" }}>
-            Upload PDF Skripsi / Tugas Akhir
-          </h2>
-          <p className="text-sm mb-6" style={{ color: "oklch(60% 0.03 250)" }}>
-            Upload file PDF lengkap skripsi/TA kamu. Semua pemrosesan dilakukan di browser kamu.
-          </p>
+        <div className="max-w-2xl mx-auto">
+          <div className="section-card">
+            <h2 className="text-xl font-bold mb-2 text-white">Langkah 1: Unggah PDF & Metadata</h2>
+            <p className="text-sm mb-6" style={{ color: "oklch(60% 0.03 245)" }}>
+              Isi data skripsi Anda dan upload file PDF utama skripsi untuk memisahkannya per bab.
+            </p>
 
-          <FileDropZone
-            id="pdf-upload"
-            label="Upload PDF Lengkap"
-            file={file}
-            onFile={handleFile}
-            onClear={() => {
-              setFile(null);
-              setPdfBytes(null);
-              setTotalPages(0);
-            }}
-            hint="Mendukung file PDF hingga 100 MB, lebih dari 300 halaman"
-          />
-
-          {file && totalPages > 0 && (
-            <div className="mt-4 alert-success flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
-              </svg>
-              <span>
-                <strong>{file.name}</strong> — {totalPages} halaman
-              </span>
-            </div>
-          )}
-
-          <button
-            className="btn btn-primary w-full mt-6"
-            disabled={!file || totalPages === 0}
-            onClick={() => setStep("metadata")}
-          >
-            Lanjut ke Metadata →
-          </button>
-        </div>
-      )}
-
-      {/* ===== STEP 2: Metadata ===== */}
-      {step === "metadata" && (
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-xl font-semibold mb-2" style={{ color: "oklch(90% 0.02 250)" }}>
-            Metadata Repository
-          </h2>
-          <p className="text-sm mb-6" style={{ color: "oklch(60% 0.03 250)" }}>
-            Data ini akan digunakan untuk penamaan file sesuai standar Repository UNSRI.
-          </p>
-
-          <div className="flex flex-col gap-4">
-            {/* Program Studi */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "oklch(78% 0.04 250)" }}>
-                Program Studi <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
-              </label>
-              <StudyProgramSelect
-                value={meta.kode}
-                onChange={(kode, program) => {
-                  setMeta((m) => ({ ...m, kode }));
-                  setSelectedProgram(program);
-                  if (metaErrors.kode) setMetaErrors((e) => ({ ...e, kode: undefined }));
-                }}
-                error={metaErrors.kode}
-              />
-              {selectedProgram && (
-                <p className="mt-1.5 text-xs" style={{ color: "oklch(55% 0.03 250)" }}>
-                  {selectedProgram.faculty} · Kode: {selectedProgram.code}
-                </p>
-              )}
-            </div>
-
-            {/* NIM */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" htmlFor="nim" style={{ color: "oklch(78% 0.04 250)" }}>
-                NIM (Nomor Induk Mahasiswa) <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
-              </label>
-              <input
-                id="nim"
-                type="text"
-                className={`input-dark ${metaErrors.nim ? "border-[oklch(55%_0.22_25)]" : ""}`}
-                placeholder="Contoh: 090312823001"
-                value={meta.nim}
-                onChange={(e) => {
-                  setMeta((m) => ({ ...m, nim: e.target.value }));
-                  if (metaErrors.nim) setMetaErrors((er) => ({ ...er, nim: undefined }));
-                }}
-              />
-              {metaErrors.nim && <p className="mt-1 text-xs" style={{ color: "oklch(70% 0.2 25)" }}>{metaErrors.nim}</p>}
-            </div>
-
-            {/* NIDN 1 */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" htmlFor="nidn1" style={{ color: "oklch(78% 0.04 250)" }}>
-                NIDN Pembimbing 1 <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
-              </label>
-              <input
-                id="nidn1"
-                type="text"
-                maxLength={10}
-                className={`input-dark ${metaErrors.nidn1 ? "border-[oklch(55%_0.22_25)]" : ""}`}
-                placeholder="Contoh: 0012345678"
-                value={meta.nidn1}
-                onChange={(e) => {
-                  setMeta((m) => ({ ...m, nidn1: e.target.value }));
-                  if (metaErrors.nidn1) setMetaErrors((er) => ({ ...er, nidn1: undefined }));
-                }}
-              />
-              {metaErrors.nidn1 && <p className="mt-1 text-xs" style={{ color: "oklch(70% 0.2 25)" }}>{metaErrors.nidn1}</p>}
-            </div>
-
-            {/* NIDN 2 */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" htmlFor="nidn2" style={{ color: "oklch(78% 0.04 250)" }}>
-                NIDN Pembimbing 2{" "}
-                <span className="badge" style={{ fontSize: "0.65rem", background: "oklch(28% 0.03 250)", color: "oklch(60% 0.03 250)", border: "none", marginLeft: "4px" }}>
-                  Opsional
-                </span>
-              </label>
-              <input
-                id="nidn2"
-                type="text"
-                maxLength={10}
-                className={`input-dark ${metaErrors.nidn2 ? "border-[oklch(55%_0.22_25)]" : ""}`}
-                placeholder="Kosongkan jika tidak ada"
-                value={meta.nidn2 ?? ""}
-                onChange={(e) => {
-                  setMeta((m) => ({ ...m, nidn2: e.target.value }));
-                  if (metaErrors.nidn2) setMetaErrors((er) => ({ ...er, nidn2: undefined }));
-                }}
-              />
-              {metaErrors.nidn2 && <p className="mt-1 text-xs" style={{ color: "oklch(70% 0.2 25)" }}>{metaErrors.nidn2}</p>}
-            </div>
-
-            {/* Preview filename */}
-            {meta.kode && meta.nim && meta.nidn1 && (
+            <div className="flex flex-col gap-6">
+              {/* Prodi */}
               <div>
-                <p className="text-xs mb-1.5" style={{ color: "oklch(55% 0.03 250)" }}>Contoh nama file:</p>
-                <div className="filename-chip">{buildFullFilename(meta)}</div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: "oklch(78% 0.04 245)" }}>
+                  Program Studi <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
+                </label>
+                <StudyProgramSelect
+                  value={meta.kode}
+                  onChange={(k, p) => {
+                    setMeta((m) => ({ ...m, kode: k }));
+                    setSelectedProgram(p);
+                    if (errors.kode) setErrors((e) => { const c = { ...e }; delete c.kode; return c; });
+                  }}
+                  error={errors.kode}
+                />
               </div>
-            )}
-          </div>
 
-          <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
-            <button className="btn btn-secondary w-full sm:w-auto" onClick={() => setStep("upload")}>← Kembali</button>
-            <button
-              className="btn btn-primary flex-1 w-full"
-              onClick={() => { if (validateMeta()) setStep("ranges"); }}
-            >
-              Lanjut ke Rentang Halaman →
-            </button>
+              {/* NIM */}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" htmlFor="split-nim" style={{ color: "oklch(78% 0.04 245)" }}>
+                  NIM <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
+                </label>
+                <input
+                  id="split-nim"
+                  type="text"
+                  className={`input-dark ${errors.nim ? "border-[oklch(55%_0.22_25)]" : ""}`}
+                  placeholder="Nomor Induk Mahasiswa"
+                  value={meta.nim}
+                  onChange={(e) => {
+                    setMeta((m) => ({ ...m, nim: e.target.value }));
+                    if (errors.nim) setErrors((er) => { const c = { ...er }; delete c.nim; return c; });
+                  }}
+                />
+                {errors.nim && <p className="mt-1 text-xs" style={{ color: "oklch(70% 0.2 25)" }}>{errors.nim}</p>}
+              </div>
+
+              {/* NIDN 1 & 2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" htmlFor="split-nidn1" style={{ color: "oklch(78% 0.04 245)" }}>
+                    NIDN Pembimbing 1 <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
+                  </label>
+                  <input
+                    id="split-nidn1"
+                    type="text"
+                    maxLength={10}
+                    className={`input-dark ${errors.nidn1 ? "border-[oklch(55%_0.22_25)]" : ""}`}
+                    placeholder="10 digit NIDN"
+                    value={meta.nidn1}
+                    onChange={(e) => {
+                      setMeta((m) => ({ ...m, nidn1: e.target.value }));
+                      if (errors.nidn1) setErrors((er) => { const c = { ...er }; delete c.nidn1; return c; });
+                    }}
+                  />
+                  {errors.nidn1 && <p className="mt-1 text-xs" style={{ color: "oklch(70% 0.2 25)" }}>{errors.nidn1}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5" htmlFor="split-nidn2" style={{ color: "oklch(78% 0.04 245)" }}>
+                    NIDN Pembimbing 2 <span className="text-[11px]" style={{ color: "oklch(50% 0.02 245)" }}>(Opsional)</span>
+                  </label>
+                  <input
+                    id="split-nidn2"
+                    type="text"
+                    maxLength={10}
+                    className={`input-dark ${errors.nidn2 ? "border-[oklch(55%_0.22_25)]" : ""}`}
+                    placeholder="10 digit NIDN"
+                    value={meta.nidn2 || ""}
+                    onChange={(e) => {
+                      setMeta((m) => ({ ...m, nidn2: e.target.value }));
+                      if (errors.nidn2) setErrors((er) => { const c = { ...er }; delete c.nidn2; return c; });
+                    }}
+                  />
+                  {errors.nidn2 && <p className="mt-1 text-xs" style={{ color: "oklch(70% 0.2 25)" }}>{errors.nidn2}</p>}
+                </div>
+              </div>
+
+              {/* Thesis File PDF */}
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: "oklch(78% 0.04 245)" }}>
+                  File PDF Skripsi Utama Lengkap <span style={{ color: "oklch(65% 0.2 25)" }}>*</span>
+                </label>
+                <FileDropZone
+                  id="thesis-upload"
+                  label="Pilih atau seret file PDF skripsi utama"
+                  file={file}
+                  onFile={handleFile}
+                  onClear={() => {
+                    setFile(null);
+                    setPdfBytes(null);
+                    setTotalPages(0);
+                  }}
+                  error={errors.file}
+                />
+              </div>
+
+              {/* Submit / Continue Button */}
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid oklch(18% 0.01 245)" }}>
+                <button
+                  className="btn btn-brand w-full py-3"
+                  onClick={() => {
+                    if (validateMeta()) {
+                      setStep("ranges");
+                    }
+                  }}
+                >
+                  Lanjut ke Atur Rentang Halaman →
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ===== STEP 3: Page Ranges ===== */}
+      {/* STEP 2: Page Ranges */}
       {step === "ranges" && pdfBytes && (
-        <div>
-          <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+        <div className="fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-xl font-semibold" style={{ color: "oklch(90% 0.02 250)" }}>
-                Rentang Halaman
-              </h2>
-              <p className="text-sm mt-1" style={{ color: "oklch(60% 0.03 250)" }}>
-                Total {totalPages} halaman · Atur rentang untuk setiap bagian
+              <h2 className="text-xl font-bold text-white">Langkah 2: Tentukan Rentang Halaman</h2>
+              <p className="text-sm mt-1" style={{ color: "oklch(60% 0.03 245)" }}>
+                Total {totalPages} halaman skripsi · Atur rentang untuk setiap bab
               </p>
             </div>
             <button
@@ -567,19 +452,22 @@ export default function SplitterPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left: sections */}
+            {/* Left: Sections range editors */}
             <div className="flex flex-col gap-3">
               {sections.map((section) => (
                 <SectionRangeEditor
                   key={section.id}
                   section={section}
                   totalPages={totalPages}
-                  onChange={updateSectionRange}
-                  onChange2={updateSectionRange2}
-                  onPreviewPage={(page) => {
-                    setPreviewPage(page);
-                    setActiveSectionId(section.id);
+                  onChange={(id, rng) => {
+                    const next = sections.map((s) => (s.id === id ? { ...s, range: rng } : s));
+                    setSections(next);
                   }}
+                  onChange2={(id, rng) => {
+                    const next = sections.map((s) => (s.id === id ? { ...s, range2: rng } : s));
+                    setSections(next);
+                  }}
+                  onPreviewPage={setPreviewPage}
                   onDelete={
                     section.id.startsWith("bab") &&
                     !["bab2", "bab3", "bab4", "bab5"].includes(section.id)
@@ -602,201 +490,178 @@ export default function SplitterPage() {
                 Tambah Bab Baru
               </button>
 
-              <div className="flex flex-col-reverse sm:flex-row gap-3 mt-4">
-                <button className="btn btn-secondary w-full sm:w-auto" onClick={() => setStep("metadata")}>← Kembali</button>
-                <button
-                  className="btn btn-primary flex-1 w-full"
-                  onClick={() => setStep("generate")}
-                  disabled={sections.some((s) => s.required && (!s.range || (s.range2 !== undefined && !s.range2)))}
-                >
-                  Lanjut ke Generate →
+              <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
+                <button className="btn btn-secondary flex-1" onClick={() => setStep("upload")}>
+                  ← Kembali ke Upload
+                </button>
+                <button className="btn btn-brand flex-1" onClick={() => setStep("download")}>
+                  Lanjut ke Pratinjau Paket →
                 </button>
               </div>
             </div>
 
-            {/* Right: preview */}
-            <div className="sticky top-6 self-start">
-              <div className="section-card">
-                <h3 className="text-sm font-semibold mb-3" style={{ color: "oklch(80% 0.03 250)" }}>
-                  Preview PDF
-                </h3>
-                <PdfPagePreview
-                  pdfBytes={pdfBytes}
-                  currentPage={previewPage}
-                  pageRange={
-                    activeSectionId
-                      ? sections.find((s) => s.id === activeSectionId)?.range ?? null
-                      : null
-                  }
-                />
+            {/* Right: PDF Preview */}
+            <div className="lg:sticky lg:top-20 h-[calc(100vh-140px)] min-h-[400px]">
+              <div className="section-card h-full flex flex-col p-4">
+                <h3 className="text-sm font-semibold mb-3 text-white">Pratinjau Halaman Skripsi</h3>
+                <div className="flex-1 overflow-hidden relative">
+                  <PdfPagePreview
+                    pdfBytes={pdfBytes}
+                    currentPage={previewPage}
+                    onPageClick={setPreviewPage}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===== STEP 4: Generate ===== */}
-      {step === "generate" && (
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-xl font-semibold mb-2" style={{ color: "oklch(90% 0.02 250)" }}>
-            Generate File
-          </h2>
-
-          <div className="alert-info mb-4">
-            <strong>Semua pemrosesan dilakukan di browser kamu.</strong> File tidak dikirimkan ke server manapun.
-          </div>
-
-          {/* File preview list */}
-          <div className="section-card mb-4">
-            <p className="text-sm font-medium mb-3" style={{ color: "oklch(78% 0.04 250)" }}>
-              File yang akan dibuat:
+      {/* STEP 3: Preview & Download */}
+      {step === "download" && (
+        <div className="max-w-2xl mx-auto fade-in">
+          <div className="section-card">
+            <h2 className="text-xl font-bold mb-2 text-white">Langkah 3: Pratinjau & Unduh File Split</h2>
+            <p className="text-sm mb-6" style={{ color: "oklch(60% 0.03 245)" }}>
+              Split file skripsi Anda telah siap disusun. Berikut adalah daftar berkas yang akan dihasilkan dan dikemas:
             </p>
-            <div className="flex flex-col gap-2">
-              <div className="filename-chip">{buildFullFilename(meta)}</div>
-              {Array.from(
-                new Set(
-                  sections
-                    .filter((s) => s.range)
-                    .map((s) => buildFilename(meta, s.filenameSuffix))
-                )
-              ).map((name) => (
-                <div key={name} className="filename-chip">
-                  {name}
+
+            {/* Filename List Preview */}
+            <div className="flex flex-col gap-3 mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">Daftar Berkas Hasil Konversi</h3>
+              
+              {/* Full Text */}
+              <div className="flex items-start justify-between py-2 border-b border-white/5">
+                <div className="min-w-0 pr-4">
+                  <p className="text-sm font-mono text-white truncate">{buildFullFilename(meta)}</p>
+                  <p className="text-[11px] mt-0.5 text-white/60">File PDF Skripsi Lengkap</p>
                 </div>
-              ))}
+                <span className="badge badge-brand flex-shrink-0">Full Text</span>
+              </div>
+
+              {/* Chapters */}
+              {sections.map((sec, i) => {
+                const isConfigured = sec.range || sec.range2;
+                return (
+                  <div key={sec.id} className="flex items-start justify-between py-2 border-b border-white/5 last:border-b-0">
+                    <div className="min-w-0 pr-4">
+                      <p className="text-sm font-mono text-white truncate">
+                        {buildFilename(meta, sec.filenameSuffix)}
+                      </p>
+                      <p className="text-[11px] mt-0.5 text-white/60">
+                        {sec.description} 
+                        {sec.range && ` (Halaman ${sec.range.start}-${sec.range.end})`}
+                        {sec.range2 && ` + (Halaman ${sec.range2.start}-${sec.range2.end})`}
+                      </p>
+                    </div>
+                    <span className="badge badge-secondary flex-shrink-0">BAB / Bagian</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-white/5">
+              <button className="btn btn-secondary flex-1" onClick={() => setStep("ranges")}>
+                ← Kembali ke Atur Rentang
+              </button>
+              <button className="btn btn-accent flex-1" onClick={handleGenerateZip}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Unduh ZIP
+              </button>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Cover image reminder */}
-          <div className="alert-warning mb-4 flex gap-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0, marginTop: "1px" }}>
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+      {/* Progress Overlay */}
+      {generating && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+          style={{ background: "oklch(8% 0.005 245 / 0.82)" }}
+        >
+          <div 
+            className="w-full max-w-md p-8 rounded-2xl text-center flex flex-col items-center gap-6 animate-fade-in"
+            style={{ 
+              background: "oklch(12% 0.008 245)", 
+              border: "1px solid oklch(20% 0.015 245)",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)"
+            }}
+          >
+            {/* Spinning/pulsing logo / loading graphic */}
+            <div className="relative w-20 h-20 flex items-center justify-center">
+              {/* Outer pulsing ring */}
+              <div 
+                className="absolute inset-0 rounded-full animate-ping opacity-20"
+                style={{ border: "2px solid oklch(55% 0.16 245)" }}
+              />
+              {/* Rotating gradient ring */}
+              <div 
+                className="absolute inset-0 rounded-full animate-spin"
+                style={{ 
+                  border: "3px solid transparent",
+                  borderTopColor: "oklch(55% 0.16 245)",
+                  borderRightColor: "oklch(72% 0.16 85)",
+                  borderRadius: "50%"
+                }}
+              />
+              {/* Central Logo */}
+              <img 
+                src="/logo.svg" 
+                alt="Logo" 
+                className="w-12 h-12 object-contain relative z-10" 
+              />
+            </div>
+
+            {/* Title & Status */}
             <div>
-              <p className="font-semibold text-sm">Cover Image tidak dibuat otomatis!</p>
-              <p className="text-xs mt-0.5">
-                Kamu perlu foto/scan cover fisik skripsi dan upload sebagai{" "}
-                <code className="font-mono">{meta.kode}_{meta.nim}_cover.jpg</code>
+              <h3 className="text-lg font-bold text-white mb-2">Memisahkan PDF Skripsi</h3>
+              <p className="text-sm font-medium" style={{ color: "oklch(72% 0.16 85)" }}>
+                {generateStatus}
               </p>
             </div>
-          </div>
 
-          {/* Progress Overlay */}
-          {generating && (
-            <div 
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
-              style={{ background: "oklch(8% 0.005 245 / 0.82)" }}
-            >
-              <div 
-                className="w-full max-w-md p-8 rounded-2xl text-center flex flex-col items-center gap-6 animate-fade-in"
-                style={{ 
-                  background: "oklch(12% 0.008 245)", 
-                  border: "1px solid oklch(20% 0.015 245)",
-                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)"
-                }}
-              >
-                {/* Spinning/pulsing logo / loading graphic */}
-                <div className="relative w-20 h-20 flex items-center justify-center">
-                  {/* Outer pulsing ring */}
-                  <div 
-                    className="absolute inset-0 rounded-full animate-ping opacity-20"
-                    style={{ border: "2px solid oklch(55% 0.16 245)" }}
-                  />
-                  {/* Rotating gradient ring */}
-                  <div 
-                    className="absolute inset-0 rounded-full animate-spin"
-                    style={{ 
-                      border: "3px solid transparent",
-                      borderTopColor: "oklch(55% 0.16 245)",
-                      borderRightColor: "oklch(72% 0.16 85)",
-                      borderRadius: "50%"
-                    }}
-                  />
-                  {/* Central Logo */}
-                  <img 
-                    src="/logo.svg" 
-                    alt="Logo" 
-                    className="w-12 h-12 object-contain relative z-10" 
-                  />
-                </div>
-
-                {/* Title & Status */}
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-2">Memproses PDF Skripsi</h3>
-                  <p className="text-sm font-medium" style={{ color: "oklch(72% 0.16 85)" }}>
-                    {generateStatus}
-                  </p>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full">
-                  <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(60% 0.03 245)" }}>
-                    <span>Kemajuan</span>
-                    <span>{generateProgress}%</span>
-                  </div>
-                  <div className="progress-bar" style={{ height: "8px" }}>
-                    <div 
-                      className="progress-fill transition-all duration-300" 
-                      style={{ 
-                        width: `${generateProgress}%`,
-                        background: "linear-gradient(90deg, oklch(55% 0.16 245), oklch(72% 0.16 85))"
-                      }} 
-                    />
-                  </div>
-                </div>
-
-                {/* Crucial Warning Alert */}
+            {/* Progress Bar */}
+            <div className="w-full">
+              <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(60% 0.03 245)" }}>
+                <span>Kemajuan</span>
+                <span>{generateProgress}%</span>
+              </div>
+              <div className="progress-bar" style={{ height: "8px" }}>
                 <div 
-                  className="w-full flex gap-3 p-3.5 rounded-xl text-left"
+                  className="progress-fill transition-all duration-300" 
                   style={{ 
-                    background: "oklch(78% 0.18 80 / 0.06)", 
-                    border: "1px solid oklch(78% 0.18 80 / 0.12)",
-                    color: "oklch(85% 0.14 80)"
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: "2px" }}>
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  <div>
-                    <p className="font-semibold text-xs text-white">Jangan Tutup Halaman Ini!</p>
-                    <p className="text-[11px] mt-0.5" style={{ opacity: 0.9 }}>
-                      Pemisahan PDF dilakukan secara lokal di browser Anda. Menutup halaman ini akan menghentikan proses pemisahan.
-                    </p>
-                  </div>
-                </div>
+                    width: `${generateProgress}%`,
+                    background: "linear-gradient(90deg, oklch(55% 0.16 245), oklch(72% 0.16 85))"
+                  }} 
+                />
               </div>
             </div>
-          )}
 
-          <div className="flex flex-col-reverse sm:flex-row gap-3">
-            <button className="btn btn-secondary w-full sm:w-auto" onClick={() => setStep("ranges")} disabled={generating}>
-              ← Kembali
-            </button>
-            <button
-              id="btn-generate-zip"
-              className="btn btn-primary flex-1 w-full"
-              onClick={handleGenerate}
-              disabled={generating}
+            {/* Crucial Warning Alert */}
+            <div 
+              className="w-full flex gap-3 p-3.5 rounded-xl text-left"
+              style={{ 
+                background: "oklch(78% 0.18 80 / 0.06)", 
+                border: "1px solid oklch(78% 0.18 80 / 0.12)",
+                color: "oklch(85% 0.14 80)"
+              }}
             >
-              {generating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Memproses...
-                </>
-              ) : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Download ZIP
-                </>
-              )}
-            </button>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: "2px" }}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <div>
+                <p className="font-semibold text-xs text-white">Jangan Tutup Halaman Ini!</p>
+                <p className="text-[11px] mt-0.5" style={{ opacity: 0.9 }}>
+                  Seluruh pemrosesan dokumen berjalan sepenuhnya di browser Anda. Menutup halaman ini akan membatalkan proses.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

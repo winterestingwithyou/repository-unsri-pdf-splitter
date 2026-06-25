@@ -354,7 +354,7 @@ The application has evolved from a simple PDF splitter and Turnitin merger into 
 
 ## Completed Features
 
-### 1. Penyusun Berkas RAMA (All-in-one Generator)
+### 1. Penyusun Berkas Repository (All-in-one Generator)
 - Integrates complete repository package creation in a single workflow.
 - **Client-side Cover Image Compression**: Compresses hardcover scan/photo to under 500KB fully inside the browser.
 - **RAMA Standard File Packaging**: Automatically converts, renames, and packages:
@@ -368,6 +368,7 @@ The application has evolved from a simple PDF splitter and Turnitin merger into 
 - Curated dark-academic color palette featuring deep navy-blue primary tones (`oklch(55% 0.16 245)`) and gold accent details (`oklch(72% 0.16 85)`).
 - Responsive sidebar navigation (supports all-in-one generator and guide).
 - Transitions and micro-animations for page progress steps.
+- Redesigned **Splitter PDF Mandiri** with a premium 3-step wizard workflow (Upload & Metadata, Rentang Halaman, Pratinjau & Unduh) matching the Paket Lengkap style.
 
 ## Planned Features
 

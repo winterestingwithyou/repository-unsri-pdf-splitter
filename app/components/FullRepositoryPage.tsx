@@ -56,7 +56,7 @@ export default function FullRepositoryPage() {
   return (
     <div className="fade-in">
       {renderModeSelector()}
-      <CompleteRamaFlow />
+      <CompleteRepositoryFlow />
     </div>
   );
 
@@ -74,7 +74,7 @@ export default function FullRepositoryPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
           </svg>
-          Paket Lengkap RAMA
+          Paket Lengkap Repository
         </button>
         <button
           onClick={() => setMode("splitter")}
@@ -111,7 +111,7 @@ export default function FullRepositoryPage() {
   }
 }
 
-function CompleteRamaFlow() {
+function CompleteRepositoryFlow() {
   const [step, setStep] = useState<Step>("upload");
 
   // Reset scroll to top when changing steps
@@ -323,7 +323,7 @@ function CompleteRamaFlow() {
       saveAs(content, zipFilename);
 
       setGenerateProgress(100);
-      showToast("success", "Paket ZIP RAMA berhasil dibuat & diunduh!");
+      showToast("success", "Paket ZIP Repository berhasil dibuat & diunduh!");
       setStep("download");
     } catch (e) {
       console.error(e);
@@ -390,7 +390,7 @@ function CompleteRamaFlow() {
           <div className="section-card">
             <h2 className="text-xl font-bold mb-2 text-white">Langkah 1: Unggah Dokumen & Metadata</h2>
             <p className="text-sm mb-6" style={{ color: "oklch(60% 0.03 245)" }}>
-              Isi data skripsi Anda dan upload berkas-berkas persyaratan untuk menyusun paket lengkap Repository RAMA.
+              Isi data skripsi Anda dan upload berkas-berkas persyaratan untuk menyusun paket lengkap Repository.
             </p>
 
             <div className="flex flex-col gap-6">
@@ -644,7 +644,7 @@ function CompleteRamaFlow() {
           <div className="section-card">
             <h2 className="text-xl font-bold mb-2 text-white">Langkah 3: Pratinjau & Unduh Paket Berkas</h2>
             <p className="text-sm mb-6" style={{ color: "oklch(60% 0.03 245)" }}>
-              Paket ZIP lengkap untuk Repository RAMA telah siap disusun. Berikut adalah daftar berkas yang akan dihasilkan dan dikemas:
+              Paket ZIP lengkap untuk Repository telah siap disusun. Berikut adalah daftar berkas yang akan dihasilkan dan dikemas:
             </p>
 
             {/* Filename List Preview */}
@@ -757,7 +757,7 @@ function CompleteRamaFlow() {
 
             {/* Title & Status */}
             <div>
-              <h3 className="text-lg font-bold text-white mb-2">Menyusun Paket Berkas RAMA</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Menyusun Paket Berkas Repository</h3>
               <p className="text-sm font-medium" style={{ color: "oklch(72% 0.16 85)" }}>
                 {generateStatus}
               </p>

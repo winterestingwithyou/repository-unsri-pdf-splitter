@@ -22,7 +22,7 @@ type Feature = "generator" | "guide";
 const FEATURES: { id: Feature; label: string; desc: string; icon: React.ReactNode; soon?: boolean }[] = [
   {
     id: "generator",
-    label: "Penyusun Berkas RAMA",
+    label: "Penyusun Berkas Repository",
     desc: "Buat paket berkas repository",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -108,7 +108,7 @@ export default function Home() {
               </h2>
             </div>
             <p className="text-sm max-w-md" style={{ color: "oklch(55% 0.02 245)" }}>
-              Gabungkan PDF, kompres cover, split bab skripsi, dan unduh paket berkas lengkap siap upload sesuai standar Repository RAMA Universitas Sriwijaya.
+              Gabungkan PDF, kompres cover, split bab skripsi, dan unduh paket berkas lengkap siap upload sesuai standar Repository Universitas Sriwijaya.
             </p>
           </div>
           <div className="separator" />
@@ -165,7 +165,7 @@ export default function Home() {
                     </svg>
                   ),
                   title: "Standar Repository",
-                  desc: "Penamaan file otomatis sesuai standar RAMA UNSRI.",
+                  desc: "Penamaan file otomatis sesuai standar Repository UNSRI.",
                 },
               ].map((card) => (
                 <div
