@@ -542,7 +542,8 @@ export default function SplitterPage() {
               </p>
             </div>
             <button
-              className="btn btn-secondary flex items-center gap-2"
+              className="btn btn-accent flex items-center gap-2 animate-pulse-subtle"
+              style={{ animation: "float 3s ease-in-out infinite" }}
               onClick={handleAutoDetect}
               disabled={detecting}
             >
@@ -553,8 +554,10 @@ export default function SplitterPage() {
                 </>
               ) : (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                    <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5z" opacity="0.7" />
+                    <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z" opacity="0.7" />
                   </svg>
                   Deteksi Otomatis
                 </>
