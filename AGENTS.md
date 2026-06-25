@@ -110,87 +110,37 @@ The user SHOULD NOT manually enter the KODE to avoid mistakes.
 
 ## PDF Sections
 
-The application supports splitting the thesis into:
+The application supports splitting the thesis into various sections. The prefix numbers (e.g., `01`, `02`, etc.) in the filenames MUST be sequential and dynamic. They depend on the number of main chapters (BAB) in the thesis.
 
-### 01_front_ref
+### 1. Front Matter (01_front_ref)
+Contains cover, approval pages, abstract, table of contents, and all pages before BAB I.
+- **Always** uses the suffix: `01_front_ref`
+- **Output filename**: `KODE_NIM_NIDN1_NIDN2_01_front_ref.pdf`
 
-Contains:
+### 2. Main Chapters (BAB)
+The thesis can have any number of chapters (e.g. BAB I to V, or more for specific study programs).
+Each chapter is numbered sequentially starting from `02`:
+- **BAB I**: Suffix `02` (e.g. `KODE_NIM_NIDN1_NIDN2_02.pdf`)
+- **BAB II**: Suffix `03` (e.g. `KODE_NIM_NIDN1_NIDN2_03.pdf`)
+- **BAB III**: Suffix `04` (e.g. `KODE_NIM_NIDN1_NIDN2_04.pdf`)
+- **BAB IV**: Suffix `05` (e.g. `KODE_NIM_NIDN1_NIDN2_05.pdf`)
+- **BAB V**: Suffix `06` (e.g. `KODE_NIM_NIDN1_NIDN2_06.pdf`)
+- ...and so on for any subsequent chapters.
 
-- Cover
-- Approval pages
-- Abstract
-- Table of contents
-- All pages before BAB I
+### 3. References (Daftar Pustaka)
+Must be placed after the last chapter, continuing the sequence.
+- **Suffix**: `[Next Number]_ref`
+  - E.g., if there are 5 chapters, the next number is `07`, so the suffix is `07_ref`.
+  - E.g., if there are 7 chapters, the next number is `09`, so the suffix is `09_ref`.
+- **Output filename**: `KODE_NIM_NIDN1_NIDN2_07_ref.pdf` (for 5 chapters)
 
-Output filename:
+### 4. Appendices (Lampiran)
+Must be placed after the references, continuing the sequence.
+- **Suffix**: `[Next Number]_lamp`
+  - E.g., if there are 5 chapters, the references suffix is `07_ref`, so the appendix suffix is `08_lamp`.
+  - E.g., if there are 7 chapters, the references suffix is `09_ref`, so the appendix suffix is `10_lamp`.
+- **Output filename**: `KODE_NIM_NIDN1_NIDN2_08_lamp.pdf` (for 5 chapters)
 
-```
-KODE_NIM_NIDN1_NIDN2_01_front_ref.pdf
-```
-
----
-
-### BAB 2
-
-Output:
-
-```
-KODE_NIM_NIDN1_NIDN2_02.pdf
-```
-
----
-
-### BAB 3
-
-Output:
-
-```
-KODE_NIM_NIDN1_NIDN2_03.pdf
-```
-
----
-
-### BAB 4
-
-Output:
-
-```
-KODE_NIM_NIDN1_NIDN2_04.pdf
-```
-
----
-
-### BAB 5
-
-Output:
-
-```
-KODE_NIM_NIDN1_NIDN2_05.pdf
-```
-
----
-
-### Daftar Pustaka
-
-Detected using the title:
-
-- DAFTAR PUSTAKA
-
-Output:
-
-```
-KODE_NIM_NIDN1_NIDN2_06_ref.pdf
-```
-
----
-
-### Lampiran
-
-Output:
-
-```
-KODE_NIM_NIDN1_NIDN2_07_lamp.pdf
-```
 
 ---
 

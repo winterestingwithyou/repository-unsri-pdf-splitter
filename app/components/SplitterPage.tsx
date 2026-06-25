@@ -11,6 +11,7 @@ import {
   buildDetectedRanges,
   extractPageTexts,
   getPdfPageCount,
+  recalculateSuffixes,
   type SplitSection,
   type RepositoryMetadata,
   type PageRange,
@@ -44,7 +45,7 @@ export default function SplitterPage() {
   const [metaErrors, setMetaErrors] = useState<Partial<Record<keyof RepositoryMetadata, string>>>({});
 
   // Sections
-  const [sections, setSections] = useState<SplitSection[]>(getDefaultSections());
+  const [sections, setSections] = useState<SplitSection[]>(recalculateSuffixes(getDefaultSections()));
   const [previewPage, setPreviewPage] = useState(1);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
@@ -67,7 +68,7 @@ export default function SplitterPage() {
       setFile(f);
       setPdfBytes(bytes);
       setTotalPages(count);
-      setSections(getDefaultSections());
+      setSections(recalculateSuffixes(getDefaultSections()));
       showToast("success", `PDF dimuat: ${count} halaman`);
     } catch {
       showToast("error", "File PDF tidak valid atau rusak.");
@@ -101,12 +102,44 @@ export default function SplitterPage() {
       const detected = detectChapterPages(texts);
       const ranges = buildDetectedRanges(detected, totalPages);
 
-      setSections((prev) =>
-        prev.map((s) => ({
+      setSections((prev) => {
+        let updated = [...prev];
+        const detectedKeys = Object.keys(ranges);
+        const babKeys = detectedKeys
+          .filter((k) => k.startsWith("bab"))
+          .sort((a, b) => {
+            const numA = parseInt(a.replace("bab", ""));
+            const numB = parseInt(b.replace("bab", ""));
+            return numA - numB;
+          });
+
+        // Ensure all detected chapters exist in updated
+        for (const babKey of babKeys) {
+          if (!updated.some((s) => s.id === babKey)) {
+            const babNum = parseInt(babKey.replace("bab", ""));
+            const newChapter: SplitSection = {
+              id: babKey,
+              label: `BAB ${babNum}`,
+              filenameSuffix: `${babNum}`,
+              range: null,
+              required: false,
+              description: `Bab ${babNum} - Terdeteksi otomatis`,
+            };
+            const lastBabIdx = updated.reduce(
+              (acc, s, idx) => (s.id.startsWith("bab") ? idx : acc),
+              0
+            );
+            updated.splice(lastBabIdx + 1, 0, newChapter);
+          }
+        }
+
+        updated = recalculateSuffixes(updated);
+
+        return updated.map((s) => ({
           ...s,
-          range: ranges[s.id as keyof typeof ranges] ?? s.range,
-        }))
-      );
+          range: ranges[s.id] ?? s.range,
+        }));
+      });
       showToast("success", "Deteksi otomatis selesai! Silakan periksa rentang halaman.");
     } catch (e) {
       console.error("[AutoDetect] Error:", e);
@@ -115,6 +148,37 @@ export default function SplitterPage() {
       setDetecting(false);
     }
   }
+
+  const handleAddChapter = useCallback(() => {
+    setSections((prev) => {
+      const babIndices = prev
+        .map((s, idx) => ({ id: s.id, idx }))
+        .filter((s) => s.id.startsWith("bab"));
+      const lastBabIdx = babIndices.length > 0 ? babIndices[babIndices.length - 1].idx : 0;
+      
+      // Determine next bab number based on current count
+      const nextBabNum = babIndices.length + 1;
+      const newChapter: SplitSection = {
+        id: `bab${nextBabNum}`,
+        label: `BAB ${nextBabNum}`,
+        filenameSuffix: `${nextBabNum}`,
+        range: null,
+        required: false,
+        description: `Bab ${nextBabNum} - Bab Tambahan`,
+      };
+
+      const updated = [...prev];
+      updated.splice(lastBabIdx + 1, 0, newChapter);
+      return recalculateSuffixes(updated);
+    });
+  }, []);
+
+  const handleDeleteChapter = useCallback((id: string) => {
+    setSections((prev) => {
+      const filtered = prev.filter((s) => s.id !== id);
+      return recalculateSuffixes(filtered);
+    });
+  }, []);
 
   // ---------- STEP 4: Generate ZIP ----------
   async function handleGenerate() {
@@ -443,10 +507,28 @@ export default function SplitterPage() {
                     setPreviewPage(page);
                     setActiveSectionId(section.id);
                   }}
+                  onDelete={
+                    section.id.startsWith("bab") && section.id !== "bab1"
+                      ? handleDeleteChapter
+                      : undefined
+                  }
                 />
               ))}
 
-              <div className="flex gap-3 mt-2">
+              <button
+                type="button"
+                className="btn btn-ghost w-full py-3 border border-dashed border-white/10 hover:border-white/20 hover:bg-white/5 transition-all text-sm font-medium flex items-center justify-center gap-2 mt-1"
+                style={{ borderRadius: "0.75rem" }}
+                onClick={handleAddChapter}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Tambah Bab Baru
+              </button>
+
+              <div className="flex gap-3 mt-4">
                 <button className="btn btn-secondary" onClick={() => setStep("metadata")}>← Kembali</button>
                 <button
                   className="btn btn-primary flex-1"

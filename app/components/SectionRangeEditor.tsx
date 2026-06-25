@@ -5,6 +5,7 @@ interface SectionRangeEditorProps {
   totalPages: number;
   onChange: (sectionId: string, range: PageRange | null) => void;
   onPreviewPage?: (page: number) => void;
+  onDelete?: (sectionId: string) => void;
   error?: string;
 }
 
@@ -13,6 +14,7 @@ export function SectionRangeEditor({
   totalPages,
   onChange,
   onPreviewPage,
+  onDelete,
   error,
 }: SectionRangeEditorProps) {
   const range = section.range;
@@ -70,17 +72,30 @@ export function SectionRangeEditor({
           </p>
         </div>
 
-        {range && (
-          <button
-            type="button"
-            className="btn btn-ghost flex-shrink-0"
-            style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}
-            onClick={handleClear}
-            aria-label={`Hapus rentang ${section.label}`}
-          >
-            Hapus
-          </button>
-        )}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {range && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}
+              onClick={handleClear}
+              aria-label={`Kosongkan rentang ${section.label}`}
+            >
+              Kosongkan
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              className="btn btn-ghost hover:text-[oklch(55%_0.22_25)] text-red-400"
+              style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}
+              onClick={() => onDelete(section.id)}
+              aria-label={`Hapus bab ${section.label}`}
+            >
+              Hapus Bab
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Range inputs */}
