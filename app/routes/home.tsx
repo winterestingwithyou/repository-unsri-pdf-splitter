@@ -6,22 +6,61 @@ import { ToastContainer } from "../components/Toast";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Repository UNSRI PDF Splitter — Alat Persiapan Upload Repositori" },
+    { title: "Repository UNSRI — Panduan & Alat Persiapan Upload Repositori" },
     {
       name: "description",
       content:
-        "Pisahkan dan siapkan file PDF skripsi/TA sesuai standar Repository Universitas Sriwijaya. Semua pemrosesan dilakukan langsung di browser kamu — file tidak pernah diunggah ke server.",
+        "Panduan lengkap dan alat bantu persiapan file upload Repository Universitas Sriwijaya. Split PDF skripsi, merger Turnitin, dan panduan upload — semua diproses di browser.",
     },
-    { name: "keywords", content: "repository unsri, pdf splitter, skripsi, tugas akhir, unsri" },
-    { property: "og:title", content: "Repository UNSRI PDF Splitter" },
-    { property: "og:description", content: "Alat bantu persiapan file upload Repository UNSRI. Privacy-first — diproses di browser." },
+    { name: "keywords", content: "repository unsri, pdf splitter, skripsi, tugas akhir, unsri, panduan upload" },
+    { property: "og:title", content: "Repository UNSRI — Panduan & Alat Upload" },
+    { property: "og:description", content: "Panduan & alat persiapan file Repository UNSRI. Privacy-first — diproses langsung di browser." },
   ];
 }
 
-type Tab = "splitter" | "turnitin";
+type Feature = "splitter" | "turnitin" | "guide";
+
+const FEATURES: { id: Feature; label: string; desc: string; icon: React.ReactNode; soon?: boolean }[] = [
+  {
+    id: "splitter",
+    label: "PDF Splitter",
+    desc: "Pisahkan skripsi per bab",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="12" y1="11" x2="12" y2="17" />
+        <polyline points="9 14 12 11 15 14" />
+      </svg>
+    ),
+  },
+  {
+    id: "turnitin",
+    label: "Turnitin Merger",
+    desc: "Gabungkan laporan Turnitin",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 3H8l-2 4h12z" />
+      </svg>
+    ),
+  },
+  {
+    id: "guide",
+    label: "Panduan Upload",
+    desc: "Tata cara upload repository",
+    soon: true,
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+      </svg>
+    ),
+  },
+];
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("splitter");
+  const [feature, setFeature] = useState<Feature>("splitter");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -29,179 +68,231 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="animated-bg min-h-screen">
-      {/* Header */}
+    <div className="animated-bg min-h-screen flex flex-col">
+      {/* ============ HEADER ============ */}
       <header className="glass-strong sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+          {/* Brand */}
           <div className="flex items-center gap-3">
             <img
               src="/logo.svg"
-              alt="Logo Repository UNSRI PDF Splitter"
-              className="w-8 h-8 rounded-lg flex-shrink-0 object-contain shadow-md"
-              aria-hidden="true"
+              alt="Logo"
+              className="w-9 h-9 rounded-xl flex-shrink-0 object-contain"
+              style={{ filter: "drop-shadow(0 2px 8px oklch(0% 0 0 / 0.3))" }}
             />
             <div>
               <h1 className="text-sm font-bold leading-tight gradient-text">
                 Repository UNSRI
               </h1>
-              <p className="text-xs hidden sm:block" style={{ color: "oklch(55% 0.03 250)" }}>
-                PDF Splitter & Merger
+              <p className="text-[11px] hidden sm:block" style={{ color: "oklch(50% 0.02 245)" }}>
+                Panduan & Alat Persiapan Upload
               </p>
             </div>
           </div>
 
+          {/* Privacy badge */}
           <div
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-            style={{ background: "oklch(64% 0.22 165 / 0.1)", border: "1px solid oklch(64% 0.22 165 / 0.2)" }}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+            style={{ background: "oklch(62% 0.14 175 / 0.08)", border: "1px solid oklch(62% 0.14 175 / 0.12)" }}
           >
             <div
               className="w-1.5 h-1.5 rounded-full"
-              style={{ background: "oklch(64% 0.22 165)", animation: "pulse-dot 2s ease-in-out infinite" }}
+              style={{ background: "oklch(62% 0.14 175)", animation: "pulse-dot 2s ease-in-out infinite" }}
             />
-            <span className="text-xs font-medium" style={{ color: "oklch(72% 0.18 165)" }}>
+            <span className="text-xs font-medium" style={{ color: "oklch(72% 0.1 175)" }}>
               Diproses di browser
             </span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Hero */}
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 badge badge-brand mb-4">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-            Privacy-First · Tidak Ada Upload ke Server
+      {/* ============ MAIN ============ */}
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+        {/* ---- Hero ---- */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-2">
+            <div>
+              <div className="inline-flex items-center gap-2 badge badge-brand mb-3">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Privacy-First · Tidak Ada Upload ke Server
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold gradient-text tracking-tight leading-tight">
+                Persiapan File<br className="hidden sm:block" /> Repository UNSRI
+              </h2>
+            </div>
+            <p className="text-sm max-w-md" style={{ color: "oklch(55% 0.02 245)" }}>
+              Upload PDF skripsi, isi metadata, dan dapatkan semua file siap upload
+              sesuai standar Repository Universitas Sriwijaya.
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3 gradient-text">
-            Persiapan File Repository UNSRI
-          </h2>
-          <p className="text-sm max-w-lg mx-auto" style={{ color: "oklch(62% 0.03 250)" }}>
-            Upload satu PDF skripsi lengkap, isi metadata, dan dapatkan semua file siap upload
-            sesuai standar Repository Universitas Sriwijaya dalam satu klik.
-          </p>
+          <div className="separator" />
         </div>
 
-        {/* Tab navigation */}
-        <div
-          className="flex gap-1 p-1 mb-8 rounded-xl mx-auto w-fit"
-          style={{ background: "oklch(14% 0.015 250)", border: "1px solid oklch(22% 0.025 250)" }}
-          role="tablist"
-          aria-label="Fitur"
-        >
-          <button
-            id="tab-splitter"
-            role="tab"
-            aria-selected={tab === "splitter"}
-            aria-controls="panel-splitter"
-            className={`nav-tab flex items-center gap-2 ${tab === "splitter" ? "active" : ""}`}
-            onClick={() => setTab("splitter")}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            PDF Splitter
-          </button>
-          <button
-            id="tab-turnitin"
-            role="tab"
-            aria-selected={tab === "turnitin"}
-            aria-controls="panel-turnitin"
-            className={`nav-tab flex items-center gap-2 ${tab === "turnitin" ? "active" : ""}`}
-            onClick={() => setTab("turnitin")}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-            </svg>
-            Turnitin Merger
-          </button>
-        </div>
-
-        {/* Panels */}
-        <div
-          id="panel-splitter"
-          role="tabpanel"
-          aria-labelledby="tab-splitter"
-          hidden={tab !== "splitter"}
-        >
-          {!mounted ? (
-            <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
-              <div className="space-y-4">
-                <div className="h-6 w-3/4 rounded bg-white/5" />
-                <div className="h-4 w-1/2 rounded bg-white/5" />
-                <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
-              </div>
-              <div className="h-10 w-full rounded bg-white/5" />
+        {/* ---- Layout: Feature Nav + Content ---- */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar / Feature navigation */}
+          <nav className="lg:w-64 flex-shrink-0" aria-label="Fitur">
+            {/* Horizontal on mobile, vertical on desktop */}
+            <div className="flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 -mx-1 px-1 lg:mx-0 lg:px-0">
+              {FEATURES.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => !f.soon && setFeature(f.id)}
+                  className={`feature-nav-item ${feature === f.id ? "active" : ""} ${f.soon ? "opacity-50 cursor-not-allowed" : ""}`}
+                  aria-current={feature === f.id ? "page" : undefined}
+                  disabled={f.soon}
+                >
+                  <div className="nav-icon">
+                    {f.icon}
+                  </div>
+                  <div className="flex flex-col items-start min-w-0">
+                    <span className="font-semibold text-sm flex items-center gap-2">
+                      {f.label}
+                      {f.soon && (
+                        <span className="badge badge-gold text-[10px] py-0 px-1.5">Segera</span>
+                      )}
+                    </span>
+                    <span className="text-[11px] hidden lg:block" style={{ color: "oklch(50% 0.02 245)" }}>
+                      {f.desc}
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
-          ) : (
-            tab === "splitter" && <SplitterPage />
-          )}
-        </div>
-        <div
-          id="panel-turnitin"
-          role="tabpanel"
-          aria-labelledby="tab-turnitin"
-          hidden={tab !== "turnitin"}
-        >
-          {!mounted ? (
-            <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
-              <div className="space-y-4">
-                <div className="h-6 w-3/4 rounded bg-white/5" />
-                <div className="h-4 w-1/2 rounded bg-white/5" />
-                <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
-              </div>
-              <div className="h-10 w-full rounded bg-white/5" />
+
+            {/* Sidebar info cards (desktop only) */}
+            <div className="hidden lg:flex flex-col gap-3 mt-6 pt-6" style={{ borderTop: "1px solid oklch(18% 0.01 245)" }}>
+              {[
+                {
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(55% 0.16 245)" strokeWidth="1.5">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                  ),
+                  title: "100% Privat",
+                  desc: "File diproses di browser kamu, tidak pernah dikirim ke server.",
+                },
+                {
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(72% 0.16 85)" strokeWidth="1.5">
+                      <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+                    </svg>
+                  ),
+                  title: "Standar Repository",
+                  desc: "Penamaan file otomatis sesuai standar UNSRI.",
+                },
+              ].map((card) => (
+                <div
+                  key={card.title}
+                  className="flex gap-3 p-3 rounded-xl"
+                  style={{ background: "oklch(100% 0 0 / 0.02)", border: "1px solid oklch(100% 0 0 / 0.04)" }}
+                >
+                  <div className="flex-shrink-0 mt-0.5">{card.icon}</div>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: "oklch(80% 0.02 245)" }}>{card.title}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "oklch(48% 0.02 245)" }}>{card.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            tab === "turnitin" && <TurnitinMerger />
-          )}
+          </nav>
+
+          {/* Content area */}
+          <div className="flex-1 min-w-0">
+            {/* Splitter */}
+            <div hidden={feature !== "splitter"}>
+              {!mounted ? (
+                <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
+                  <div className="space-y-4">
+                    <div className="h-6 w-3/4 rounded bg-white/5" />
+                    <div className="h-4 w-1/2 rounded bg-white/5" />
+                    <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
+                  </div>
+                  <div className="h-10 w-full rounded bg-white/5" />
+                </div>
+              ) : (
+                feature === "splitter" && <SplitterPage />
+              )}
+            </div>
+
+            {/* Turnitin */}
+            <div hidden={feature !== "turnitin"}>
+              {!mounted ? (
+                <div className="section-card max-w-xl mx-auto h-[380px] flex flex-col justify-between animate-pulse">
+                  <div className="space-y-4">
+                    <div className="h-6 w-3/4 rounded bg-white/5" />
+                    <div className="h-4 w-1/2 rounded bg-white/5" />
+                    <div className="h-48 rounded bg-white/5 border border-dashed border-white/10" />
+                  </div>
+                  <div className="h-10 w-full rounded bg-white/5" />
+                </div>
+              ) : (
+                feature === "turnitin" && <TurnitinMerger />
+              )}
+            </div>
+
+            {/* Guide placeholder */}
+            <div hidden={feature !== "guide"}>
+              <div className="section-card text-center py-16">
+                <svg className="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="oklch(50% 0.02 245)" strokeWidth="1.5">
+                  <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+                  <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+                </svg>
+                <h3 className="text-lg font-bold mb-2" style={{ color: "oklch(75% 0.02 245)" }}>Panduan Upload Repository</h3>
+                <p className="text-sm max-w-sm mx-auto" style={{ color: "oklch(48% 0.02 245)" }}>
+                  Fitur panduan lengkap pembuatan akun dan upload file ke Repository UNSRI sedang dalam pengembangan.
+                </p>
+                <span className="inline-block mt-4 badge badge-gold">Segera Hadir</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Info cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12">
+        {/* ---- Bottom info cards (mobile only) ---- */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10 lg:hidden">
           {[
             {
               icon: (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(58% 0.23 250)" strokeWidth="1.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(55% 0.16 245)" strokeWidth="1.5">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               ),
               title: "100% Privat",
-              desc: "Semua pemrosesan PDF dilakukan langsung di browser kamu. File tidak pernah dikirim ke server.",
+              desc: "File diproses langsung di browser. Tidak pernah dikirim ke server.",
             },
             {
               icon: (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(64% 0.22 165)" strokeWidth="1.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(62% 0.14 175)" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
               ),
               title: "Hemat Waktu",
-              desc: "Tidak perlu split manual halaman per halaman. Deteksi otomatis bab membantu mengisi rentang halaman.",
+              desc: "Deteksi otomatis bab membantu mengisi rentang halaman.",
             },
             {
               icon: (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(78% 0.18 80)" strokeWidth="1.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(72% 0.16 85)" strokeWidth="1.5">
                   <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
                 </svg>
               ),
               title: "Standar Repository",
-              desc: "Nama file dihasilkan sesuai standar penamaan Repository UNSRI termasuk kode prodi, NIM, dan NIDN.",
+              desc: "Penamaan file sesuai standar Repository UNSRI termasuk kode prodi, NIM, dan NIDN.",
             },
           ].map((card) => (
             <div key={card.title} className="section-card card-hover">
               <div
-                className="flex items-center justify-center w-10 h-10 rounded-lg mb-3"
-                style={{ background: "oklch(100% 0 0 / 0.04)", border: "1px solid oklch(100% 0 0 / 0.06)" }}
+                className="flex items-center justify-center w-9 h-9 rounded-lg mb-3"
+                style={{ background: "oklch(100% 0 0 / 0.03)", border: "1px solid oklch(100% 0 0 / 0.05)" }}
               >
                 {card.icon}
               </div>
-              <h3 className="font-semibold text-sm mb-1" style={{ color: "oklch(88% 0.02 250)" }}>
+              <h3 className="font-semibold text-sm mb-1" style={{ color: "oklch(86% 0.02 245)" }}>
                 {card.title}
               </h3>
-              <p className="text-xs leading-relaxed" style={{ color: "oklch(58% 0.03 250)" }}>
+              <p className="text-xs leading-relaxed" style={{ color: "oklch(52% 0.02 245)" }}>
                 {card.desc}
               </p>
             </div>
@@ -209,14 +300,14 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t mt-16" style={{ borderColor: "oklch(18% 0.02 250)" }}>
-        <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* ============ FOOTER ============ */}
+      <footer style={{ borderTop: "1px solid oklch(16% 0.01 245)" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex flex-col items-center sm:items-start gap-1">
-            <p className="text-xs" style={{ color: "oklch(45% 0.03 250)" }}>
-              Repository UNSRI PDF Splitter · Dibuat untuk mahasiswa Universitas Sriwijaya
+            <p className="text-xs" style={{ color: "oklch(40% 0.02 245)" }}>
+              Repository UNSRI · Dibuat untuk mahasiswa Universitas Sriwijaya
             </p>
-            <p className="text-xs" style={{ color: "oklch(40% 0.03 250)" }}>
+            <p className="text-[11px]" style={{ color: "oklch(34% 0.02 245)" }}>
               File kamu tidak pernah meninggalkan perangkat kamu
             </p>
           </div>
@@ -227,10 +318,10 @@ export default function Home() {
             className="flex items-center gap-2 transition-opacity hover:opacity-80"
             aria-label="GitHub Winterest"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ color: "oklch(55% 0.03 250)", flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style={{ color: "oklch(45% 0.02 245)", flexShrink: 0 }}>
               <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
             </svg>
-            <span className="text-xs" style={{ color: "oklch(50% 0.03 250)" }}>
+            <span className="text-xs" style={{ color: "oklch(42% 0.02 245)" }}>
               Winterest | M. Adam Yudistira
             </span>
           </a>
