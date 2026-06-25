@@ -350,13 +350,26 @@ The application should support:
 
 # Future Roadmap
 
-Possible future improvements:
+The application is planned to grow beyond a simple PDF splitter and Turnitin merger into a comprehensive Repository UNSRI preparation hub for students of Universitas Sriwijaya.
 
-- Automatic chapter detection with higher accuracy.
-- Progressive Web App (PWA) support.
-- Repository upload guide integration.
-- Existing file renaming tool.
-- Multi-language support (Indonesian and English).
+## Planned Features
+
+### Repository Upload Guide
+
+The application will provide an integrated step-by-step guide that helps students navigate the official Repository UNSRI submission process, including:
+
+- **Account Registration**: A direct link to the official Repository UNSRI account creation form.
+- **Account Setup Walkthrough**: A visual, step-by-step guide explaining how to register and set up a Repository UNSRI account correctly.
+- **Upload Guide**: A detailed, illustrated tutorial on how to upload the prepared files to the Repository UNSRI system, covering file order, required metadata fields, and common mistakes to avoid.
+
+### UI/UX Redesign
+
+The current interface will undergo a full visual redesign to produce a look that feels more **professional and academic**, appropriate for the context of a university thesis submission tool.
+
+The redesign goals:
+- Cleaner, more structured layout with better visual hierarchy.
+- A typography and color palette that reflects an academic and institutional tone.
+- Improved information architecture so users can navigate the tool more intuitively.
 
 ---
 
