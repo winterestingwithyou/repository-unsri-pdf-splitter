@@ -161,9 +161,6 @@ export async function extractPageTexts(
   const { getPdfjsLib } = await import("./pdfjsSetup");
   const pdfjsLib = await getPdfjsLib();
 
-  // Wajib copy buffer — PDF.js men-transfer (detach) ArrayBuffer ke worker
-  // thread saat getDocument() dipanggil. Tanpa copy, buffer asli di React
-  // state akan ter-detach dan tidak bisa digunakan oleh fungsi lain.
   const buffer = pdfBytes.slice(0);
   const typedArray = new Uint8Array(buffer);
 
@@ -173,13 +170,47 @@ export async function extractPageTexts(
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const text = content.items
-      .map((item: unknown) => {
-        const typedItem = item as { str?: string };
-        return typedItem.str || "";
-      })
-      .join(" ")
-      .toUpperCase();
+    const items = content.items as Array<{ str?: string; transform?: number[] }>;
+
+    // Sort items top-to-bottom (Y descending), then left-to-right (X ascending).
+    // In PDF space, Y=0 is the bottom of the page, so higher Y means higher up.
+    const sortedItems = [...items].sort((a, b) => {
+      const yA = a.transform ? a.transform[5] : 0;
+      const yB = b.transform ? b.transform[5] : 0;
+      const xA = a.transform ? a.transform[4] : 0;
+      const xB = b.transform ? b.transform[4] : 0;
+
+      // Group items on the same line if their Y values are very close (< 5 units)
+      if (Math.abs(yA - yB) < 5) {
+        return xA - xB;
+      }
+      return yB - yA;
+    });
+
+    const lines: string[] = [];
+    let currentY = -1;
+    let currentLine: string[] = [];
+
+    for (const item of sortedItems) {
+      const y = item.transform ? item.transform[5] : 0;
+      const str = item.str || "";
+
+      if (currentY === -1) {
+        currentY = y;
+        currentLine.push(str);
+      } else if (Math.abs(currentY - y) < 5) {
+        currentLine.push(str);
+      } else {
+        lines.push(currentLine.join(" ").trim());
+        currentY = y;
+        currentLine = [str];
+      }
+    }
+    if (currentLine.length > 0) {
+      lines.push(currentLine.join(" ").trim());
+    }
+
+    const text = lines.join("\n").toUpperCase();
     texts.push(text);
     progressCallback?.(i, pdf.numPages);
   }
@@ -195,18 +226,18 @@ export interface DetectedRanges {
 }
 
 const CHAPTER_PATTERNS = {
-  bab1: [/\bBAB\s+I\b(?!\s*[IVX])/i, /\bBAB\s+1\b/i, /\bBAB\s+PERTAMA\b/i, /PENDAHULUAN/i],
-  bab2: [/\bBAB\s+II\b(?!\s*I)/i, /\bBAB\s+2\b/i, /\bBAB\s+KEDUA\b/i],
-  bab3: [/\bBAB\s+III\b(?!\s*I)/i, /\bBAB\s+3\b/i, /\bBAB\s+KETIGA\b/i],
-  bab4: [/\bBAB\s+IV\b/i, /\bBAB\s+4\b/i, /\bBAB\s+KEEMPAT\b/i],
-  bab5: [/\bBAB\s+V\b(?!\s*I)/i, /\bBAB\s+5\b/i, /\bBAB\s+KELIMA\b/i],
-  bab6: [/\bBAB\s+VI\b(?!\s*I)/i, /\bBAB\s+6\b/i, /\bBAB\s+KEENAM\b/i],
-  bab7: [/\bBAB\s+VII\b(?!\s*I)/i, /\bBAB\s+7\b/i, /\bBAB\s+KETUJUH\b/i],
-  bab8: [/\bBAB\s+VIII\b(?!\s*I)/i, /\bBAB\s+8\b/i, /\bBAB\s+KEDELAPAN\b/i],
-  bab9: [/\bBAB\s+IX\b(?!\s*I)/i, /\bBAB\s+9\b/i, /\bBAB\s+KESEMBILAN\b/i],
-  bab10: [/\bBAB\s+X\b(?!\s*I)/i, /\bBAB\s+10\b/i, /\bBAB\s+KESEPULUH\b/i],
-  daftar_pustaka: [/DAFTAR\s+PUSTAKA/i, /DAFTAR\s+REFERENSI/i, /REFERENCES/i],
-  lampiran: [/\bLAMPIRAN\b/i, /\bAPPENDIX\b/i, /\bAPPENDICES\b/i],
+  bab1: [/^[^A-Z0-9]*(BAB\s+I\b(?!\s*[IVX])|BAB\s+1\b|BAB\s+PERTAMA\b)/i],
+  bab2: [/^[^A-Z0-9]*(BAB\s+II\b(?!\s*I)|BAB\s+2\b|BAB\s+KEDUA\b)/i],
+  bab3: [/^[^A-Z0-9]*(BAB\s+III\b(?!\s*I)|BAB\s+3\b|BAB\s+KETIGA\b)/i],
+  bab4: [/^[^A-Z0-9]*(BAB\s+IV\b|BAB\s+4\b|BAB\s+KEEMPAT\b)/i],
+  bab5: [/^[^A-Z0-9]*(BAB\s+V\b(?!\s*I)|BAB\s+5\b|BAB\s+KELIMA\b)/i],
+  bab6: [/^[^A-Z0-9]*(BAB\s+VI\b(?!\s*I)|BAB\s+6\b|BAB\s+KEENAM\b)/i],
+  bab7: [/^[^A-Z0-9]*(BAB\s+VII\b(?!\s*I)|BAB\s+7\b|BAB\s+KETUJUH\b)/i],
+  bab8: [/^[^A-Z0-9]*(BAB\s+VIII\b(?!\s*I)|BAB\s+8\b|BAB\s+KEDELAPAN\b)/i],
+  bab9: [/^[^A-Z0-9]*(BAB\s+IX\b(?!\s*I)|BAB\s+9\b|BAB\s+KESEMBILAN\b)/i],
+  bab10: [/^[^A-Z0-9]*(BAB\s+X\b(?!\s*I)|BAB\s+10\b|BAB\s+KESEPULUH\b)/i],
+  daftar_pustaka: [/^[^A-Z0-9]*(DAFTAR\s+PUSTAKA|DAFTAR\s+REFERENSI|REFERENCES)/i],
+  lampiran: [/^[^A-Z0-9]*(LAMPIRAN|APPENDIX|APPENDICES)/i],
 };
 
 export function toRoman(num: number): string {
@@ -268,11 +299,54 @@ export function detectChapterPages(pageTexts: string[]): Record<string, number> 
   const detected: Record<string, number> = {};
   const totalPages = pageTexts.length;
 
-  for (const [chapter, patterns] of Object.entries(CHAPTER_PATTERNS)) {
-    for (let i = 0; i < totalPages; i++) {
-      const text = pageTexts[i];
-      const matched = patterns.some((pattern) => pattern.test(text));
-      if (matched && !(chapter in detected)) {
+  function isTocLine(line: string): boolean {
+    const upper = line.toUpperCase();
+    // Check for leader dots
+    if (upper.includes("..") || upper.includes(". .")) return true;
+    // Check if line ends with a number preceded by dots, dashes, underscores, or multiple spaces
+    if (/[\.\-_\s]\s*\d+$/.test(upper)) {
+      // If there's a gap of 3 or more spaces before the number, it's a TOC line
+      if (/\s{3,}\d+$/.test(upper)) return true;
+      if (/[\.\-_]\s*\d+$/.test(upper)) return true;
+    }
+    return false;
+  }
+
+  for (let i = 0; i < totalPages; i++) {
+    const pageText = pageTexts[i];
+
+    // Split page text into trimmed lines
+    const lines = pageText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    // Skip Table of Contents (Daftar Isi) or list pages to avoid false positives
+    const isTocOrList = lines.some((line) => {
+      const upper = line.toUpperCase();
+      return (
+        upper.includes("DAFTAR ISI") ||
+        upper.includes("TABLE OF CONTENTS") ||
+        upper.includes("DAFTAR TABEL") ||
+        upper.includes("DAFTAR GAMBAR")
+      );
+    });
+    if (isTocOrList) continue;
+
+    // Check only the first 8 lines of the page
+    const topLines = lines.slice(0, 8);
+
+    for (const [chapter, patterns] of Object.entries(CHAPTER_PATTERNS)) {
+      if (chapter in detected) continue;
+
+      const isMatch = topLines.some((line) => {
+        // If this line looks like a Table of Contents entry, don't match it as a heading
+        if (isTocLine(line)) return false;
+
+        return patterns.some((pattern) => pattern.test(line));
+      });
+
+      if (isMatch) {
         detected[chapter] = i + 1; // 1-indexed
       }
     }
