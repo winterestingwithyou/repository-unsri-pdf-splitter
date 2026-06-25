@@ -42,7 +42,7 @@ export default function TurnitinMerger() {
       const merged = await mergePdfs([letterBytes, turnitinBytes]);
       const filename = buildTurnitinFilename({ kode, nim });
 
-      const blob = new Blob([merged as any], { type: "application/pdf" });
+      const blob = new Blob([merged as BlobPart], { type: "application/pdf" });
       saveAs(blob, filename);
       showToast("success", `Berhasil diunduh: ${filename}`);
     } catch (e) {

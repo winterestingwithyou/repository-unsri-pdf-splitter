@@ -416,3 +416,26 @@ Do not introduce a database.
 The application exists to solve one problem efficiently:
 
 "Convert a student's thesis PDF into Repository UNSRI ready files."
+
+---
+
+# Coding Standards & Quality Control
+
+## Strict Type Safety
+
+To ensure code reliability and maintainability:
+
+- Compromising TypeScript's compiler safety is strictly FORBIDDEN.
+- Avoid using `any`, `as unknown as`, `var!`, or other type-safety-compromising patterns.
+- Always use correct, explicit types or allow accurate type inference.
+
+## Verification
+
+Developers MUST run the type check command after writing code or completing a task:
+
+```bash
+bun run typecheck
+```
+
+This generates necessary React Router types and runs the TypeScript compiler `tsc` to verify type safety.
+
