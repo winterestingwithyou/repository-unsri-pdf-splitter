@@ -34,7 +34,7 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
       <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="section-card mb-6">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: "oklch(55% 0.16 245 / 0.15)", border: "1px solid oklch(55% 0.16 245 / 0.25)" }}
@@ -61,12 +61,12 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(65% 0.16 245)" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          <span style={{ color: "oklch(65% 0.04 245)" }}>
+          <span className="leading-relaxed" style={{ color: "oklch(65% 0.04 245)" }}>
             Gunakan fitur <strong className="text-white">Penyusun Berkas Repository</strong> di tab sebelah untuk menyiapkan semua file sebelum mengikuti panduan ini.
             {onNavigateToGenerator && (
               <button
                 onClick={onNavigateToGenerator}
-                className="ml-2 underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity"
+                className="inline-block mt-1.5 sm:mt-0 sm:ml-2 underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity"
                 style={{ color: "oklch(72% 0.16 85)" }}
               >
                 Buka Penyusun Berkas →
@@ -91,14 +91,16 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
               href="https://bit.ly/userrepositoryunsri"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-brand inline-flex items-center gap-2 text-sm"
+              className="btn btn-brand inline-flex items-center gap-2 text-sm w-full sm:w-auto justify-center whitespace-normal h-auto py-2.5 text-center"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
-              Buka Form Pendaftaran (bit.ly/userrepositoryunsri)
+              <span>
+                Buka Form Pendaftaran <span className="opacity-80 text-xs block sm:inline sm:ml-1 break-all">(bit.ly/userrepositoryunsri)</span>
+              </span>
             </a>
           </>
         }
@@ -144,7 +146,7 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
             {onNavigateToGenerator && (
               <button
                 onClick={onNavigateToGenerator}
-                className="btn btn-accent inline-flex items-center gap-2 text-sm"
+                className="btn btn-accent inline-flex items-center gap-2 text-sm w-full sm:w-auto justify-center"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -285,13 +287,13 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
               ].map(({ field, rule, highlight }) => (
                 <div
                   key={field}
-                  className="flex gap-3 items-start p-3 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 p-3 rounded-lg"
                   style={{
                     background: highlight ? "oklch(72% 0.16 85 / 0.06)" : "oklch(100% 0 0 / 0.03)",
                     border: `1px solid ${highlight ? "oklch(72% 0.16 85 / 0.15)" : "oklch(100% 0 0 / 0.06)"}`,
                   }}
                 >
-                  <span className="text-xs font-semibold min-w-[140px] flex-shrink-0" style={{ color: highlight ? "oklch(72% 0.16 85)" : "oklch(70% 0.04 245)" }}>
+                  <span className="text-xs font-semibold sm:min-w-[140px] sm:flex-shrink-0" style={{ color: highlight ? "oklch(72% 0.16 85)" : "oklch(70% 0.04 245)" }}>
                     {field}
                   </span>
                   <span className="text-xs" style={{ color: "oklch(58% 0.03 245)" }}>{rule}</span>
@@ -389,7 +391,7 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
             { text: "Kolom Contributors hanya diisi nama pembimbing, bukan nama mahasiswa." },
             { text: "File cover HARUS berformat JPG/JPEG dengan ukuran maksimal 500KB. Aplikasi ini akan mengompresi otomatis." },
             { text: "File Turnitin harus sudah ditandatangani oleh dosen pembimbing jika pengecekan tidak dilakukan di UPT Perpustakaan." },
-            { text: "File referensi (_06_ref) memiliki opsi pengisian yang berbeda dari file BAB lainnya — perhatikan Gambar 1.12." },
+            { text: "File referensi (_ref) memiliki opsi pengisian yang berbeda dari file BAB lainnya — perhatikan Gambar 1.12." },
             { text: 'Jika jumlah BAB lebih dari 5, urutan nomor file disesuaikan (07, 08, dst.) dengan tetap menggunakan akhiran "_ref" untuk referensi dan "_lamp" untuk lampiran.' },
             { text: 'Centang semua kotak di Manage Deposits (User Work Area, Under Review, Live Archive, Retired) agar semua kiriman bisa terlihat.' },
           ].map(({ text }, i) => (
@@ -482,7 +484,7 @@ function GuideStep({ number, title, description, image, images }: GuideStepProps
         </div>
         <h3 className="text-sm font-bold text-white">{title}</h3>
       </div>
-      <div className="ml-10 text-sm" style={{ color: "oklch(62% 0.03 245)" }}>
+      <div className="pl-0 sm:pl-10 text-sm" style={{ color: "oklch(62% 0.03 245)" }}>
         {description}
         {allImages.length > 0 && (
           <ScreenshotGrid images={allImages} />
@@ -535,9 +537,9 @@ function OptionNote({ label, note, tag, tagColor, image }: OptionNoteProps) {
   };
   return (
     <div className="rounded-xl p-3" style={{ background: "oklch(100% 0 0 / 0.02)", border: "1px solid oklch(100% 0 0 / 0.06)" }}>
-      <div className="flex items-start justify-between gap-2 mb-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
         <span className="text-xs font-semibold text-white">{label}</span>
-        <span className={`badge ${tagStyles[tagColor]} flex-shrink-0`} style={{ fontSize: "0.6rem" }}>{tag}</span>
+        <span className={`badge ${tagStyles[tagColor]} flex-shrink-0 self-start sm:self-auto`} style={{ fontSize: "0.6rem" }}>{tag}</span>
       </div>
       <p className="text-xs" style={{ color: "oklch(55% 0.02 245)" }}>{note}</p>
       {image && <ScreenshotGrid images={[image]} />}
