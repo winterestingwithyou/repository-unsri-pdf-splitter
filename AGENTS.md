@@ -370,16 +370,14 @@ The application has evolved from a simple PDF splitter and Turnitin merger into 
 - Transitions and micro-animations for page progress steps.
 - Redesigned **Splitter PDF Mandiri** with a premium 3-step wizard workflow (Upload & Metadata, Rentang Halaman, Pratinjau & Unduh) matching the Paket Lengkap style.
 
+### 3. Repository Upload Guide
+- Integrated step-by-step guide with 12 steps that helps students navigate the official Repository UNSRI submission process.
+- **Account Registration Link**: Direct link to the official Repository UNSRI account creation form (`https://bit.ly/userrepositoryunsri`).
+- **Visual Upload Walkthrough**: Interactive, detailed, and illustrated tutorial on how to upload the prepared files to the Repository UNSRI system, including metadata naming standards (Capital title & creator name) and custom references options.
+
 ## Planned Features
 
-### Repository Upload Guide
-
-The application will provide an integrated step-by-step guide that helps students navigate the official Repository UNSRI submission process, including:
-
-- **Account Registration**: A direct link to the official Repository UNSRI account creation form.
-- **Account Setup Walkthrough**: A visual, step-by-step guide explaining how to register and set up a Repository UNSRI account correctly.
-- **Upload Guide**: A detailed, illustrated tutorial on how to upload the prepared files to the Repository UNSRI system, covering file order, required metadata fields, and common mistakes to avoid.
-
+- None (All features from roadmap successfully completed)
 
 ---
 

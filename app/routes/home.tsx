@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
 import FullRepositoryPage from "../components/FullRepositoryPage";
+import UploadGuidePage from "../components/UploadGuidePage";
 import { ToastContainer } from "../components/Toast";
 
 export function meta({}: Route.MetaArgs) {
@@ -34,7 +35,6 @@ const FEATURES: { id: Feature; label: string; desc: string; icon: React.ReactNod
     id: "guide",
     label: "Panduan Upload",
     desc: "Tata cara upload repository",
-    soon: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
@@ -201,19 +201,9 @@ export default function Home() {
               )}
             </div>
 
-            {/* Guide placeholder */}
+            {/* Guide */}
             <div hidden={feature !== "guide"}>
-              <div className="section-card text-center py-16">
-                <svg className="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="oklch(50% 0.02 245)" strokeWidth="1.5">
-                  <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
-                  <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
-                </svg>
-                <h3 className="text-lg font-bold mb-2" style={{ color: "oklch(75% 0.02 245)" }}>Panduan Upload Repository</h3>
-                <p className="text-sm max-w-sm mx-auto" style={{ color: "oklch(48% 0.02 245)" }}>
-                  Fitur panduan lengkap pembuatan akun dan upload file ke Repository UNSRI sedang dalam pengembangan.
-                </p>
-                <span className="inline-block mt-4 badge badge-gold">Segera Hadir</span>
-              </div>
+              <UploadGuidePage onNavigateToGenerator={() => setFeature("generator")} />
             </div>
           </div>
         </div>
