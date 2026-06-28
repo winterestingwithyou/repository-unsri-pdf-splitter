@@ -1,8 +1,37 @@
-import React from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+
+interface ImageInfo {
+  src: string;
+  alt: string;
+  caption: string;
+}
+
+interface ImageModalContextType {
+  openImage: (src: string, alt: string, caption: string) => void;
+}
+
+const ImageModalContext = createContext<ImageModalContextType | null>(null);
 
 export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateToGenerator?: () => void }) {
+  const [activeImage, setActiveImage] = useState<ImageInfo | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveImage(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const openImage = (src: string, alt: string, caption: string) => {
+    setActiveImage({ src, alt, caption });
+  };
+
   return (
-    <div className="max-w-3xl mx-auto">
+    <ImageModalContext.Provider value={{ openImage }}>
+      <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="section-card mb-6">
         <div className="flex items-start gap-4">
@@ -372,6 +401,40 @@ export default function UploadGuidePage({ onNavigateToGenerator }: { onNavigateT
         </ul>
       </div>
     </div>
+
+      {/* Premium Image Modal Overlay */}
+      {activeImage && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-opacity duration-300 cursor-zoom-out"
+          onClick={() => setActiveImage(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            onClick={() => setActiveImage(null)}
+            aria-label="Close image"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          
+          <div 
+            className="relative max-w-4xl w-full flex flex-col items-center gap-3 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={activeImage.src}
+              alt={activeImage.alt}
+              className="max-h-[82vh] max-w-full rounded-xl object-contain shadow-2xl border border-white/10"
+            />
+            <p className="text-sm font-semibold text-center mt-1 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/5" style={{ color: "oklch(75% 0.1 85)" }}>
+              {activeImage.caption}
+            </p>
+          </div>
+        </div>
+      )}
+    </ImageModalContext.Provider>
   );
 }
 
@@ -430,11 +493,16 @@ function GuideStep({ number, title, description, image, images }: GuideStepProps
 }
 
 function ScreenshotGrid({ images }: { images: ImageInfo[] }) {
+  const modal = useContext(ImageModalContext);
   return (
     <div className={`grid gap-3 mt-3 ${images.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
       {images.map(({ src, alt, caption }) => (
-        <figure key={src} className="flex flex-col gap-1.5">
-          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid oklch(20% 0.01 245)" }}>
+        <figure key={src} className="flex flex-col gap-1.5 group">
+          <div
+            className="rounded-xl overflow-hidden cursor-zoom-in transition-all duration-300 hover:border-white/20 hover:scale-[1.01] hover:brightness-[1.05]"
+            style={{ border: "1px solid oklch(20% 0.01 245)" }}
+            onClick={() => modal?.openImage(src, alt, caption)}
+          >
             <img
               src={src}
               alt={alt}
@@ -442,7 +510,7 @@ function ScreenshotGrid({ images }: { images: ImageInfo[] }) {
               loading="lazy"
             />
           </div>
-          <figcaption className="text-center text-xs" style={{ color: "oklch(48% 0.02 245)" }}>
+          <figcaption className="text-center text-xs group-hover:text-white/60 transition-colors" style={{ color: "oklch(48% 0.02 245)" }}>
             {caption}
           </figcaption>
         </figure>
