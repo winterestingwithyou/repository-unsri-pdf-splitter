@@ -6,8 +6,8 @@ import {
   getDefaultSections,
   splitPdf,
   mergePdfs,
-  buildFilename,
-  buildFullFilename,
+  buildRamaFilename,
+  buildRamaFullFilename,
   detectChapterPages,
   buildDetectedRanges,
   extractPageTexts,
@@ -233,7 +233,7 @@ export default function SplitterPage() {
 
       // 1. Add complete thesis PDF
       setGenerateStatus("Menambahkan PDF Skripsi Lengkap...");
-      const fullThesisName = buildFullFilename(meta);
+      const fullThesisName = buildRamaFullFilename(meta);
       zip.file(fullThesisName, pdfBytes);
       setGenerateProgress(20);
 
@@ -247,11 +247,11 @@ export default function SplitterPage() {
           const bytes1 = await splitPdf(pdfBytes, sec.range);
           const bytes2 = await splitPdf(pdfBytes, sec.range2);
           const mergedFront = await mergePdfs([bytes1, bytes2]);
-          zip.file(buildFilename(meta, sec.filenameSuffix), mergedFront);
+          zip.file(buildRamaFilename(meta, sec.filenameSuffix), mergedFront);
         } else {
           if (sec.range) {
             const bytes = await splitPdf(pdfBytes, sec.range);
-            zip.file(buildFilename(meta, sec.filenameSuffix), bytes);
+            zip.file(buildRamaFilename(meta, sec.filenameSuffix), bytes);
           }
         }
         
@@ -565,7 +565,7 @@ export default function SplitterPage() {
               {/* Full Text */}
               <div className="flex items-start justify-between py-2 border-b border-white/5">
                 <div className="min-w-0 pr-4">
-                  <p className="text-sm font-mono text-white truncate">{buildFullFilename(meta)}</p>
+                  <p className="text-sm font-mono text-white truncate">{buildRamaFullFilename(meta)}</p>
                   <p className="text-[11px] mt-0.5 text-white/60">File PDF Skripsi Lengkap</p>
                 </div>
                 <span className="badge badge-brand flex-shrink-0">Full Text</span>
@@ -578,7 +578,7 @@ export default function SplitterPage() {
                   <div key={sec.id} className="flex items-start justify-between py-2 border-b border-white/5 last:border-b-0">
                     <div className="min-w-0 pr-4">
                       <p className="text-sm font-mono text-white truncate">
-                        {buildFilename(meta, sec.filenameSuffix)}
+                        {buildRamaFilename(meta, sec.filenameSuffix)}
                       </p>
                       <p className="text-[11px] mt-0.5 text-white/60">
                         {sec.description} 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import JSZip from "jszip";
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
-import { mergePdfs, buildTurnitinFilename } from "../utils/pdfProcessor";
+import { mergePdfs, buildRamaTurnitinFilename } from "../utils/pdfProcessor";
 import { FileDropZone } from "../components/FileDropZone";
 import { StudyProgramSelect } from "../components/StudyProgramSelect";
 import { showToast } from "../components/Toast";
@@ -40,7 +40,7 @@ export default function TurnitinMerger() {
       ]);
 
       const merged = await mergePdfs([letterBytes, turnitinBytes]);
-      const filename = buildTurnitinFilename({ kode, nim });
+      const filename = buildRamaTurnitinFilename({ kode, nim });
 
       const blob = new Blob([merged as BlobPart], { type: "application/pdf" });
       saveAs(blob, filename);
@@ -53,7 +53,7 @@ export default function TurnitinMerger() {
     }
   }
 
-  const outputName = kode && nim ? buildTurnitinFilename({ kode, nim }) : null;
+  const outputName = kode && nim ? buildRamaTurnitinFilename({ kode, nim }) : null;
 
   return (
     <div className="fade-in max-w-xl mx-auto">
