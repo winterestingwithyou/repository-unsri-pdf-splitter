@@ -1,87 +1,132 @@
-# Welcome to React Router!
+# Repository UNSRI Guide
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Aplikasi web **100% client-side** untuk membantu mahasiswa Universitas Sriwijaya menyiapkan berkas Repository UNSRI dengan cepat, rapi, dan sesuai standar penamaan.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Tujuan
 
-## Features
+Aplikasi ini dibuat untuk mengotomasi proses yang biasanya manual:
+- memecah PDF skripsi per bagian/BAB,
+- menggabungkan dokumen Turnitin,
+- menyiapkan paket berkas RAMA lengkap,
+- serta memberi panduan upload ke repository.unsri.ac.id.
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+Semua proses dijalankan langsung di browser pengguna.
 
-## Getting Started
+## Prinsip Privasi
 
-### Installation
+- Tidak ada upload file ke server aplikasi.
+- Tidak ada penyimpanan file ke database.
+- Dokumen diproses sepenuhnya di perangkat pengguna (browser).
 
-Install the dependencies:
+## Fitur Utama
 
+### 1) Penyusun Berkas Repository (Paket Lengkap)
+Fitur all-in-one untuk menghasilkan ZIP berkas siap upload.
+
+Input yang dibutuhkan:
+- Program Studi (dropdown dari data lokal)
+- NIM
+- NIDN Pembimbing 1
+- NIDN Pembimbing 2 (opsional)
+- Cover skripsi (gambar)
+- PDF skripsi lengkap
+- Surat Similarity (PDF)
+- Laporan Turnitin (PDF)
+
+Output ZIP:
+- `RAMA_KODE_NIM_cover.jpg`
+- `RAMA_KODE_NIM.pdf`
+- `RAMA_KODE_NIM_TURNITIN.pdf`
+- file split skripsi sesuai urutan dinamis:
+  - `RAMA_KODE_NIM_NIDN1(_NIDN2)_01_front_ref.pdf`
+  - `RAMA_KODE_NIM_NIDN1(_NIDN2)_02.pdf`
+  - `RAMA_KODE_NIM_NIDN1(_NIDN2)_03.pdf`
+  - dst.
+  - `RAMA_KODE_NIM_NIDN1(_NIDN2)_[N]_ref.pdf`
+  - `RAMA_KODE_NIM_NIDN1(_NIDN2)_[N+1]_lamp.pdf`
+
+Catatan:
+- Cover otomatis dikompres di browser bila >500KB (target <500KB).
+- `front_ref` dibuat dari gabungan 2 rentang halaman: halaman awal s.d. BAB I + halaman daftar pustaka.
+
+### 2) Splitter PDF Mandiri
+Mode khusus untuk memecah PDF skripsi saja.
+
+Alur 3 langkah:
+1. Upload PDF & metadata
+2. Atur rentang halaman
+3. Pratinjau nama file & unduh ZIP
+
+Dukungan tambahan:
+- Preview halaman PDF
+- Deteksi otomatis judul BAB/Daftar Pustaka/Lampiran (tetap bisa diedit manual)
+- Tambah BAB dinamis
+
+### 3) Turnitin Merger Mandiri
+Menggabungkan:
+1. Surat Keterangan Similarity (PDF)
+2. Laporan Turnitin (PDF)
+
+Output:
+- `RAMA_KODE_NIM_TURNITIN.pdf`
+
+Urutan merge: **Surat Similarity → Laporan Turnitin**.
+
+### 4) Panduan Upload Repository
+Panduan visual langkah demi langkah untuk proses upload ke Repository UNSRI, termasuk:
+- link pendaftaran akun: `https://bit.ly/userrepositoryunsri`
+- urutan upload file RAMA
+- pengisian opsi file
+- pengisian metadata karya ilmiah
+- tahap deposit hingga status *under review*
+
+## Aturan Penamaan Penting
+
+- Jika NIDN2 kosong, nama file **tidak** menyisakan underscore kosong.
+  - Benar: `RAMA_55201_0903xxxxxx_0012345678_02.pdf`
+  - Salah: `RAMA_55201_0903xxxxxx_0012345678__02.pdf`
+
+## Stack Teknologi
+
+- React Router v7 (framework mode)
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS v4
+- pdf-lib
+- PDF.js (`pdfjs-dist`)
+- JSZip
+- FileSaver
+- React Hook Form + Zod
+
+## Menjalankan Proyek
+
+> Repo ini memakai `bun.lock`; disarankan menggunakan **bun**.
+
+### Install
 ```bash
-npm install
+bun install
 ```
 
 ### Development
-
-Start the development server with HMR:
-
 ```bash
-npm run dev
+bun run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
+### Build
 ```bash
-npm run build
+bun run build
 ```
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
+### Typecheck (wajib untuk verifikasi TypeScript)
 ```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+bun run typecheck
 ```
 
-The containerized application can be deployed to any platform that supports Docker, including:
+## Batasan Scope Aplikasi
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
+Aplikasi ini sengaja sederhana:
+- tanpa backend,
+- tanpa autentikasi,
+- tanpa database.
 
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+Fokus utamanya: membantu mahasiswa menyiapkan berkas Repository UNSRI secepat dan seakurat mungkin.
